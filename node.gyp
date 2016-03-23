@@ -92,6 +92,7 @@
       'deps/v8/tools/tickprocessor.js',
       'deps/v8/tools/SourceMap.js',
       'deps/v8/tools/tickprocessor-driver.js',
+      'sample_heap/sample_heap.js',
     ],
   },
 
@@ -112,7 +113,8 @@
         'tools/msvs/genfiles',
         'deps/uv/src/ares',
         '<(SHARED_INTERMEDIATE_DIR)', # for node_natives.h
-        'deps/v8' # include/v8_platform.h
+        'deps/v8', # include/v8_platform.h
+        'deps/nan'
       ],
 
       'sources': [
@@ -151,6 +153,7 @@
         'src/process_wrap.cc',
         'src/udp_wrap.cc',
         'src/uv.cc',
+        'sample_heap/sample_heap.cc',
         # headers to make for a more pleasant IDE experience
         'src/async-wrap.h',
         'src/async-wrap-inl.h',
@@ -192,6 +195,26 @@
         'deps/http_parser/http_parser.h',
         'deps/v8/include/v8.h',
         'deps/v8/include/v8-debug.h',
+
+        # nan 2.0.5
+        'deps/nan/nan.h',
+        'deps/nan/nan_callbacks.h',
+        'deps/nan/nan_callbacks_12_inl.h',
+        'deps/nan/nan_callbacks_pre_12_inl.h',
+        'deps/nan/nan_converters.h',
+        'deps/nan/nan_converters_43_inl.h',
+        'deps/nan/nan_converters_pre_43_inl.h',
+        'deps/nan/nan_implementation_12_inl.h',
+        'deps/nan/nan_implementation_pre_12_inl.h',
+        'deps/nan/nan_maybe_43_inl.h',
+        'deps/nan/nan_maybe_pre_43_inl.h',
+        'deps/nan/nan_new.h',
+        'deps/nan/nan_object_wrap.h',
+        'deps/nan/nan_persistent_12_inl.h',
+        'deps/nan/nan_persistent_pre_12_inl.h',
+        'deps/nan/nan_string_bytes.h',
+        'deps/nan/nan_weak.h',
+
         '<(SHARED_INTERMEDIATE_DIR)/node_natives.h',
         # javascript files to make for an even more pleasant IDE experience
         '<@(library_files)',
