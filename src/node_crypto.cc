@@ -2662,6 +2662,7 @@ void Connection::Initialize(Environment* env, Local<Object> target) {
   t->InstanceTemplate()->SetInternalFieldCount(1);
   t->SetClassName(FIXED_ONE_BYTE_STRING(env->isolate(), "Connection"));
 
+  env->SetProtoMethod(t, "getUid", AsyncWrap::GetUid);
   env->SetProtoMethod(t, "encIn", Connection::EncIn);
   env->SetProtoMethod(t, "clearOut", Connection::ClearOut);
   env->SetProtoMethod(t, "clearIn", Connection::ClearIn);
@@ -5971,12 +5972,14 @@ void InitCrypto(Local<Object> target,
 
   Local<FunctionTemplate> pb = FunctionTemplate::New(env->isolate());
   pb->SetClassName(FIXED_ONE_BYTE_STRING(env->isolate(), "PBKDF2"));
+  env->SetProtoMethod(pb, "getUid", AsyncWrap::GetUid);
   Local<ObjectTemplate> pbt = pb->InstanceTemplate();
   pbt->SetInternalFieldCount(1);
   env->set_pbkdf2_constructor_template(pbt);
 
   Local<FunctionTemplate> rb = FunctionTemplate::New(env->isolate());
   rb->SetClassName(FIXED_ONE_BYTE_STRING(env->isolate(), "RandomBytes"));
+  env->SetProtoMethod(rb, "getUid", AsyncWrap::GetUid);
   Local<ObjectTemplate> rbt = rb->InstanceTemplate();
   rbt->SetInternalFieldCount(1);
   env->set_randombytes_constructor_template(rbt);
