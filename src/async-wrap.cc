@@ -265,6 +265,13 @@ inline AsyncWrap::~AsyncWrap() {
 }
 
 
+void AsyncWrap::GetUid(const FunctionCallbackInfo<Value>& args) {
+  AsyncWrap* wrap;
+  ASSIGN_OR_RETURN_UNWRAP(&wrap, args.Holder());
+  args.GetReturnValue().Set(wrap->get_uid());
+}
+
+
 Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
                                      int argc,
                                      Local<Value>* argv) {
