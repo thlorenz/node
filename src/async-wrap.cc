@@ -14,6 +14,7 @@ using v8::Function;
 using v8::FunctionCallbackInfo;
 using v8::HandleScope;
 using v8::HeapProfiler;
+using v8::Int32;
 using v8::Integer;
 using v8::Isolate;
 using v8::Local;
@@ -188,6 +189,76 @@ void LoadAsyncWrapperInfo(Environment* env) {
       (NODE_ASYNC_ID_OFFSET + AsyncWrap::PROVIDER_ ## PROVIDER), WrapperInfo);
   NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
+}
+
+AsyncWrap::AsyncWrap(Environment* env,
+                     Local<Object> object,
+                     ProviderType provider,
+                     AsyncWrap* parent)
+    : BaseObject(env, object), bits_(static_cast<uint32_t>(provider) << 1),
+      uid_(env->get_async_wrap_uid()) {
+  CHECK_NE(provider, PROVIDER_NONE);
+  CHECK_GE(object->InternalFieldCount(), 1);
+
+  // Shift provider value over to prevent id collision.
+  persistent().SetWrapperClassId(NODE_ASYNC_ID_OFFSET + provider);
+
+  Local<Function> init_fn = env->async_hooks_init_function();
+
+  // No init callback exists, no reason to go on.
+  if (init_fn.IsEmpty())
+    return;
+
+  // If async wrap callbacks are disabled and no parent was passed that has
+  // run the init callback then return.
+  if (!env->async_wrap_callbacks_enabled() &&
+      (parent == nullptr || !parent->ran_init_callback()))
+    return;
+
+  HandleScope scope(env->isolate());
+
+  Local<Value> argv[] = {
+    Number::New(env->isolate(), get_uid()),
+    Int32::New(env->isolate(), provider),
+    Null(env->isolate()),
+    Null(env->isolate())
+  };
+
+  if (parent != nullptr) {
+    argv[2] = Number::New(env->isolate(), parent->get_uid());
+    argv[3] = parent->object();
+  }
+
+  TryCatch try_catch(env->isolate());
+
+  MaybeLocal<Value> ret =
+      init_fn->Call(env->context(), object, arraysize(argv), argv);
+
+  if (ret.IsEmpty()) {
+    ClearFatalExceptionHandlers(env);
+    FatalException(env->isolate(), try_catch);
+  }
+
+  bits_ |= 1;  // ran_init_callback() is true now.
+}
+
+
+inline AsyncWrap::~AsyncWrap() {
+  if (!ran_init_callback())
+    return;
+
+  Local<Function> fn = env()->async_hooks_destroy_function();
+  if (!fn.IsEmpty()) {
+    HandleScope scope(env()->isolate());
+    Local<Value> uid = Number::New(env()->isolate(), get_uid());
+    TryCatch try_catch(env()->isolate());
+    MaybeLocal<Value> ret =
+        fn->Call(env()->context(), Null(env()->isolate()), 1, &uid);
+    if (ret.IsEmpty()) {
+      ClearFatalExceptionHandlers(env());
+      FatalException(env()->isolate(), try_catch);
+    }
+  }
 }
 
 
