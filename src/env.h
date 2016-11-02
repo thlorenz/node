@@ -309,16 +309,29 @@ class Environment {
    public:
     inline uint32_t* fields();
     inline int fields_count() const;
+    inline double* uid_fields();
+    inline int uid_fields_count() const;
+
+    enum UidFields {
+      kAsyncUidCntr,
+      kCurrentId,
+      kTriggerId,
+      kInitTriggerId,
+      kUidFieldsCount,
+    };
 
    private:
     friend class Environment;  // So we can call the constructor.
     inline AsyncHooks();
 
     enum Fields {
-      kFieldsCount
+      kFieldsCount,
     };
 
     uint32_t fields_[kFieldsCount];
+    // Gives us 2^53-1 unique ids. Good enough for now and makes the operation
+    // cheaper in JS.
+    double uid_fields_[kUidFieldsCount];
 
     DISALLOW_COPY_AND_ASSIGN(AsyncHooks);
   };

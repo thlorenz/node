@@ -59,8 +59,7 @@ inline uint32_t* IsolateData::zero_fill_field() const {
   return zero_fill_field_;
 }
 
-inline Environment::AsyncHooks::AsyncHooks() {
-  for (int i = 0; i < kFieldsCount; i++) fields_[i] = 0;
+inline Environment::AsyncHooks::AsyncHooks() : fields_(), uid_fields_() {
 }
 
 inline uint32_t* Environment::AsyncHooks::fields() {
@@ -69,6 +68,14 @@ inline uint32_t* Environment::AsyncHooks::fields() {
 
 inline int Environment::AsyncHooks::fields_count() const {
   return kFieldsCount;
+}
+
+inline double* Environment::AsyncHooks::uid_fields() {
+  return uid_fields_;
+}
+
+inline int Environment::AsyncHooks::uid_fields_count() const {
+  return kUidFieldsCount;
 }
 
 inline Environment::AsyncCallbackScope::AsyncCallbackScope(Environment* env)
