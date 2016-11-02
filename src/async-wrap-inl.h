@@ -96,7 +96,7 @@ inline AsyncWrap::ProviderType AsyncWrap::provider_type() const {
 }
 
 
-inline int64_t AsyncWrap::get_uid() const {
+inline double AsyncWrap::get_uid() const {
   return uid_;
 }
 

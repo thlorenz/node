@@ -297,7 +297,7 @@ inline void Environment::set_trace_sync_io(bool value) {
   trace_sync_io_ = value;
 }
 
-inline int64_t Environment::get_async_wrap_uid() {
+inline double Environment::get_async_wrap_uid() {
   return ++async_wrap_uid_;
 }
 
