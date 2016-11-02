@@ -59,6 +59,12 @@ class AsyncWrap : public BaseObject {
 
   virtual ~AsyncWrap();
 
+  static void Initialize(v8::Local<v8::Object> target,
+                         v8::Local<v8::Value> unused,
+                         v8::Local<v8::Context> context);
+
+  static void GetUid(const v8::FunctionCallbackInfo<v8::Value>& args);
+
   inline ProviderType provider_type() const;
 
   inline double get_uid() const;
