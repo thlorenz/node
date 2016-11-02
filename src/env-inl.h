@@ -71,14 +71,6 @@ inline int Environment::AsyncHooks::fields_count() const {
   return kFieldsCount;
 }
 
-inline bool Environment::AsyncHooks::callbacks_enabled() {
-  return fields_[kEnableCallbacks] != 0;
-}
-
-inline void Environment::AsyncHooks::set_enable_callbacks(uint32_t flag) {
-  fields_[kEnableCallbacks] = flag;
-}
-
 inline Environment::AsyncCallbackScope::AsyncCallbackScope(Environment* env)
     : env_(env) {
   env_->makecallback_cntr_++;
@@ -220,11 +212,6 @@ inline Environment::~Environment() {
 
 inline v8::Isolate* Environment::isolate() const {
   return isolate_;
-}
-
-inline bool Environment::async_wrap_callbacks_enabled() const {
-  // The const_cast is okay, it doesn't violate conceptual const-ness.
-  return const_cast<Environment*>(this)->async_hooks()->callbacks_enabled();
 }
 
 inline bool Environment::in_domain() const {

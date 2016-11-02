@@ -106,26 +106,9 @@ RetainedObjectInfo* WrapperInfo(uint16_t class_id, Local<Value> wrapper) {
 // end RetainedAsyncInfo
 
 
-static void EnableHooksJS(const FunctionCallbackInfo<Value>& args) {
-  Environment* env = Environment::GetCurrent(args);
-  Local<Function> init_fn = env->async_hooks_init_function();
-  if (init_fn.IsEmpty() || !init_fn->IsFunction())
-    return env->ThrowTypeError("init callback is not assigned to a function");
-  env->async_hooks()->set_enable_callbacks(1);
-}
-
-
-static void DisableHooksJS(const FunctionCallbackInfo<Value>& args) {
-  Environment* env = Environment::GetCurrent(args);
-  env->async_hooks()->set_enable_callbacks(0);
-}
-
-
 static void SetupHooks(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
-  if (env->async_hooks()->callbacks_enabled())
-    return env->ThrowError("hooks should not be set while also enabled");
   if (!args[0]->IsObject())
     return env->ThrowTypeError("first argument must be an object");
 
@@ -166,8 +149,6 @@ void AsyncWrap::Initialize(Local<Object> target,
   HandleScope scope(isolate);
 
   env->SetMethod(target, "setupHooks", SetupHooks);
-  env->SetMethod(target, "disable", DisableHooksJS);
-  env->SetMethod(target, "enable", EnableHooksJS);
 
   Local<Object> async_providers = Object::New(isolate);
 #define V(PROVIDER)                                                           \
@@ -210,12 +191,6 @@ AsyncWrap::AsyncWrap(Environment* env,
 
   // No init callback exists, no reason to go on.
   if (init_fn.IsEmpty())
-    return;
-
-  // If async wrap callbacks are disabled and no parent was passed that has
-  // run the init callback then return.
-  if (!env->async_wrap_callbacks_enabled() &&
-      (parent == nullptr || !parent->ran_init_callback()))
     return;
 
   HandleScope scope(env->isolate());
