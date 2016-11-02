@@ -87,7 +87,9 @@ intptr_t RetainedAsyncInfo::GetSizeInBytes() {
 
 RetainedObjectInfo* WrapperInfo(uint16_t class_id, Local<Value> wrapper) {
   // No class_id should be the provider type of NONE.
-  CHECK_NE(NODE_ASYNC_ID_OFFSET, class_id);
+  CHECK_GT(class_id, NODE_ASYNC_ID_OFFSET);
+  // And make sure the class_id doesn't extend past the last provider.
+  CHECK_LE(class_id - NODE_ASYNC_ID_OFFSET, AsyncWrap::PROVIDERS_LENGTH);
   CHECK(wrapper->IsObject());
   CHECK(!wrapper.IsEmpty());
 
@@ -190,6 +192,7 @@ void LoadAsyncWrapperInfo(Environment* env) {
   NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
 }
+
 
 AsyncWrap::AsyncWrap(Environment* env,
                      Local<Object> object,

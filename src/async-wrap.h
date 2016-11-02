@@ -14,17 +14,20 @@ namespace node {
 
 #define NODE_ASYNC_PROVIDER_TYPES(V)                                          \
   V(NONE)                                                                     \
-  V(CRYPTO)                                                                   \
+  V(CONNECTION)                                                               \
   V(FSEVENTWRAP)                                                              \
   V(FSREQWRAP)                                                                \
   V(GETADDRINFOREQWRAP)                                                       \
   V(GETNAMEINFOREQWRAP)                                                       \
   V(HTTPPARSER)                                                               \
   V(JSSTREAM)                                                                 \
-  V(PIPEWRAP)                                                                 \
+  V(PBKDF2REQUEST)                                                            \
   V(PIPECONNECTWRAP)                                                          \
+  V(PIPEWRAP)                                                                 \
   V(PROCESSWRAP)                                                              \
   V(QUERYWRAP)                                                                \
+  V(RANDOMBYTESREQUEST)                                                       \
+  V(SENDWRAP)                                                                 \
   V(SHUTDOWNWRAP)                                                             \
   V(SIGNALWRAP)                                                               \
   V(STATWATCHER)                                                              \
@@ -34,9 +37,8 @@ namespace node {
   V(TLSWRAP)                                                                  \
   V(TTYWRAP)                                                                  \
   V(UDPWRAP)                                                                  \
-  V(UDPSENDWRAP)                                                              \
   V(WRITEWRAP)                                                                \
-  V(ZLIB)
+  V(ZCTX)
 
 class Environment;
 
@@ -47,6 +49,7 @@ class AsyncWrap : public BaseObject {
     PROVIDER_ ## PROVIDER,
     NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
+    PROVIDERS_LENGTH,
   };
 
   AsyncWrap(Environment* env,
