@@ -307,26 +307,34 @@ class Environment {
  public:
   class AsyncHooks {
    public:
-    inline uint32_t* fields();
-    inline int fields_count() const;
-    inline double* uid_fields();
-    inline int uid_fields_count() const;
-
+    // Reason for both UidFields and Fields are that one is stored as a double*
+    // and the other as a uint32_t*.
     enum UidFields {
       kAsyncUidCntr,
       kCurrentId,
       kTriggerId,
       kInitTriggerId,
+      kScopedTriggerId,
       kUidFieldsCount,
     };
+
+    enum Fields {
+      kInit,
+      kBefore,
+      kAfter,
+      kDestroy,
+      kActiveHooks,
+      kFieldsCount,
+    };
+
+    inline uint32_t* fields();
+    inline int fields_count() const;
+    inline double* uid_fields();
+    inline int uid_fields_count() const;
 
    private:
     friend class Environment;  // So we can call the constructor.
     inline AsyncHooks();
-
-    enum Fields {
-      kFieldsCount,
-    };
 
     uint32_t fields_[kFieldsCount];
     // Gives us 2^53-1 unique ids. Good enough for now and makes the operation

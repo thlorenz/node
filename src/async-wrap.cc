@@ -8,8 +8,10 @@
 #include "v8.h"
 #include "v8-profiler.h"
 
+using v8::ArrayBuffer;
 using v8::Boolean;
 using v8::Context;
+using v8::Float64Array;
 using v8::Function;
 using v8::FunctionCallbackInfo;
 using v8::HandleScope;
@@ -25,7 +27,17 @@ using v8::RetainedObjectInfo;
 using v8::TryCatch;
 using v8::Value;
 
+using AsyncHooks = node::Environment::AsyncHooks;
+
 namespace node {
+
+#define SET_HOOKS_CONSTANT(isolate, context, obj, name)                       \
+  do {                                                                        \
+    obj->ForceSet(context,                                                    \
+                  FIXED_ONE_BYTE_STRING(isolate, #name),                      \
+                  Integer::New(isolate, AsyncHooks::name),                    \
+                  v8::ReadOnly).FromJust();                                   \
+  } while (0)
 
 static const char* const provider_names[] = {
 #define V(PROVIDER)                                                           \
@@ -34,6 +46,8 @@ static const char* const provider_names[] = {
 #undef V
 };
 
+
+// Report correct information in a heapdump.
 
 class RetainedAsyncInfo: public RetainedObjectInfo {
  public:
@@ -114,10 +128,8 @@ static void SetupHooks(const FunctionCallbackInfo<Value>& args) {
 
   // All of init, before, after, destroy are supplied by async_hooks
   // internally, so this should every only be called once. At which time all
-  // the functions should be set. Detect this by checking if init !IsEmpty()
-  // and returning early if that's the case.
-  if (!env->async_hooks_init_function().IsEmpty())
-    return env->ThrowError("async_hook callbacks have already been setup");
+  // the functions should be set. Detect this by checking if init !IsEmpty().
+  CHECK(env->async_hooks_init_function().IsEmpty());
 
   Local<Object> fn_obj = args[0].As<Object>();
 
@@ -134,10 +146,10 @@ static void SetupHooks(const FunctionCallbackInfo<Value>& args) {
       env->context(),
       FIXED_ONE_BYTE_STRING(env->isolate(), "destroy")).ToLocalChecked();
 
-  if (!init_v->IsFunction() || !before_v->IsFunction() ||
-      !after_v->IsFunction() || !destroy_v->IsFunction()) {
-    return env->ThrowTypeError("all callbacks must be functions");
-  }
+  CHECK(init_v->IsFunction());
+  CHECK(before_v->IsFunction());
+  CHECK(after_v->IsFunction());
+  CHECK(destroy_v->IsFunction());
 
   env->set_async_hooks_init_function(init_v.As<Function>());
   env->set_async_hooks_before_function(before_v.As<Function>());
@@ -155,6 +167,57 @@ void AsyncWrap::Initialize(Local<Object> target,
 
   env->SetMethod(target, "setupHooks", SetupHooks);
 
+  // Attach the uint32_t[] where each slot contains the count of the number of
+  // callbacks waiting to be called on a particular event. It can then be
+  // incremented/decremented from JS quickly to communicate to C++ if there are
+  // any callbacks waiting to be called.
+  uint32_t* fields_ptr = env->async_hooks()->fields();
+  int fields_count = env->async_hooks()->fields_count();
+  Local<ArrayBuffer> fields_ab = ArrayBuffer::New(
+      isolate,
+      fields_ptr,
+      fields_count * sizeof(*fields_ptr));
+  Local<Float64Array> fields =
+      Float64Array::New(fields_ab, 0, fields_count);
+  target->Set(context,
+              FIXED_ONE_BYTE_STRING(isolate, "async_hook_fields"),
+              fields).FromJust();
+
+  // The following v8::Float64Array has 5 fields. These fields are shared in
+  // this way to allow JS and C++ to read/write each value as quickly as
+  // possible. The fields are represented as follows:
+  //
+  // kAsyncUid: Maintains the state of the next unique id to be assigned.
+  //
+  // kCurrentId: Is the id of the resource responsible for the current
+  //   execution context. A currentId == 0 means the "void", or that there is
+  //   no JS stack above the init() call (happens when a new handle is created
+  //   for an incoming TCP socket). A currentId == 1 means "root". Or the
+  //   execution context of node::StartNodeInstance.
+  //
+  // kTriggerId: Is the id of the resource responsible for init() being called.
+  //   For example, the trigger id of a new connection's TCP handle would be
+  //   the server handle. Whereas the current id at that time would be 0.
+  //
+  // kInitTriggerId: Write the id of the resource resource responsible for a
+  //   handle's creation just before calling the new handle's constructor.
+  //   After the new handle is constructed kInitTriggerId is set back to 0.
+  //
+  // kScopedTriggerId: triggerId for all constructors created within the
+  //   execution scope of the JS function triggerIdScope(). This value is
+  //   superseded by kInitTriggerId, if set.
+  double* uid_fields_ptr = env->async_hooks()->uid_fields();
+  int uid_fields_count = env->async_hooks()->uid_fields_count();
+  Local<ArrayBuffer> uid_fields_ab = ArrayBuffer::New(
+      isolate,
+      uid_fields_ptr,
+      uid_fields_count * sizeof(*uid_fields_ptr));
+  Local<Float64Array> uid_fields =
+      Float64Array::New(uid_fields_ab, 0, uid_fields_count);
+  target->Set(context,
+              FIXED_ONE_BYTE_STRING(isolate, "async_uid_fields"),
+              uid_fields).FromJust();
+
   Local<Object> async_providers = Object::New(isolate);
 #define V(PROVIDER)                                                           \
   async_providers->Set(FIXED_ONE_BYTE_STRING(isolate, #PROVIDER),             \
@@ -162,6 +225,21 @@ void AsyncWrap::Initialize(Local<Object> target,
   NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
   target->Set(FIXED_ONE_BYTE_STRING(isolate, "Providers"), async_providers);
+
+  // TODO(trevnorris): Passing all this in feels bloated, but don't like
+  // depending on "magic" variables available in the macro.
+  Local<Object> constants = Object::New(isolate);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kInit);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kBefore);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kAfter);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kDestroy);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kActiveHooks);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kAsyncUidCntr);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kCurrentId);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kTriggerId);
+  SET_HOOKS_CONSTANT(isolate, context, constants, kInitTriggerId);
+  target->Set(context, FIXED_ONE_BYTE_STRING(isolate, "constants"), constants)
+      .FromJust();
 
   env->set_async_hooks_init_function(Local<Function>());
   env->set_async_hooks_before_function(Local<Function>());
