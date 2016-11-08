@@ -218,14 +218,6 @@ void AsyncWrap::Initialize(Local<Object> target,
               FIXED_ONE_BYTE_STRING(isolate, "async_uid_fields"),
               uid_fields).FromJust();
 
-  Local<Object> async_providers = Object::New(isolate);
-#define V(PROVIDER)                                                           \
-  async_providers->Set(FIXED_ONE_BYTE_STRING(isolate, #PROVIDER),             \
-      Integer::New(isolate, AsyncWrap::PROVIDER_ ## PROVIDER));
-  NODE_ASYNC_PROVIDER_TYPES(V)
-#undef V
-  target->Set(FIXED_ONE_BYTE_STRING(isolate, "Providers"), async_providers);
-
   // TODO(trevnorris): Passing all this in feels bloated, but don't like
   // depending on "magic" variables available in the macro.
   Local<Object> constants = Object::New(isolate);
@@ -241,10 +233,26 @@ void AsyncWrap::Initialize(Local<Object> target,
   target->Set(context, FIXED_ONE_BYTE_STRING(isolate, "constants"), constants)
       .FromJust();
 
+  Local<Object> async_providers = Object::New(isolate);
+#define V(PROVIDER)                                                           \
+  async_providers->Set(FIXED_ONE_BYTE_STRING(isolate, #PROVIDER),             \
+      Integer::New(isolate, AsyncWrap::PROVIDER_ ## PROVIDER));
+  NODE_ASYNC_PROVIDER_TYPES(V)
+#undef V
+  target->Set(FIXED_ONE_BYTE_STRING(isolate, "Providers"), async_providers);
+
   env->set_async_hooks_init_function(Local<Function>());
   env->set_async_hooks_before_function(Local<Function>());
   env->set_async_hooks_after_function(Local<Function>());
   env->set_async_hooks_destroy_function(Local<Function>());
+}
+
+
+void AsyncWrap::GetUid(const v8::FunctionCallbackInfo<v8::Value>& args) {
+  AsyncWrap* wrap;
+  args.GetReturnValue().Set(-1);
+  ASSIGN_OR_RETURN_UNWRAP(&wrap, args.Holder());
+  args.GetReturnValue().Set(wrap->get_id());
 }
 
 
@@ -255,6 +263,15 @@ void LoadAsyncWrapperInfo(Environment* env) {
       (NODE_ASYNC_ID_OFFSET + AsyncWrap::PROVIDER_ ## PROVIDER), WrapperInfo);
   NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
+}
+
+
+// TODO(trevnorris): Look into the overhead of using this. Can't use it anway
+// if it switches to using persistent strings instead.
+static const char* GetProviderName(AsyncWrap::ProviderType provider) {
+  CHECK_GT(provider, 0);
+  CHECK_LE(provider, AsyncWrap::PROVIDERS_LENGTH);
+  return provider_names[provider];
 }
 
 
@@ -279,14 +296,14 @@ AsyncWrap::AsyncWrap(Environment* env,
   HandleScope scope(env->isolate());
 
   Local<Value> argv[] = {
-    Number::New(env->isolate(), get_uid()),
+    Number::New(env->isolate(), get_id()),
     Int32::New(env->isolate(), provider),
     Null(env->isolate()),
     Null(env->isolate())
   };
 
   if (parent != nullptr) {
-    argv[2] = Number::New(env->isolate(), parent->get_uid());
+    argv[2] = Number::New(env->isolate(), parent->get_id());
     argv[3] = parent->object();
   }
 
@@ -311,7 +328,7 @@ inline AsyncWrap::~AsyncWrap() {
   Local<Function> fn = env()->async_hooks_destroy_function();
   if (!fn.IsEmpty()) {
     HandleScope scope(env()->isolate());
-    Local<Value> uid = Number::New(env()->isolate(), get_uid());
+    Local<Value> uid = Number::New(env()->isolate(), get_id());
     TryCatch try_catch(env()->isolate());
     MaybeLocal<Value> ret =
         fn->Call(env()->context(), Null(env()->isolate()), 1, &uid);
@@ -326,7 +343,7 @@ inline AsyncWrap::~AsyncWrap() {
 void AsyncWrap::GetUid(const FunctionCallbackInfo<Value>& args) {
   AsyncWrap* wrap;
   ASSIGN_OR_RETURN_UNWRAP(&wrap, args.Holder());
-  args.GetReturnValue().Set(wrap->get_uid());
+  args.GetReturnValue().Set(wrap->get_id());
 }
 
 
@@ -337,7 +354,7 @@ Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
 
   Local<Function> before_fn = env()->async_hooks_before_function();
   Local<Function> after_fn = env()->async_hooks_after_function();
-  Local<Value> uid = Number::New(env()->isolate(), get_uid());
+  Local<Value> uid = Number::New(env()->isolate(), get_id());
   Local<Object> context = object();
   Local<Object> domain;
   bool has_domain = false;
