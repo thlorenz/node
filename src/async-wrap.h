@@ -73,6 +73,7 @@ class AsyncWrap : public BaseObject {
   void Reset();
 
   // Only call these within a valid HandleScope.
+  // TODO(trevnorris): These should return a MaybeLocal.
   v8::Local<v8::Value> MakeCallback(const v8::Local<v8::Function> cb,
                                     int argc,
                                     v8::Local<v8::Value>* argv);

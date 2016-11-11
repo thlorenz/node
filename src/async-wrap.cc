@@ -21,10 +21,13 @@ using v8::Integer;
 using v8::Isolate;
 using v8::Local;
 using v8::MaybeLocal;
+using v8::NewStringType;
 using v8::Number;
 using v8::Object;
 using v8::RetainedObjectInfo;
+using v8::String;
 using v8::TryCatch;
+using v8::Uint32Array;
 using v8::Value;
 
 using AsyncHooks = node::Environment::AsyncHooks;
@@ -177,8 +180,8 @@ void AsyncWrap::Initialize(Local<Object> target,
       isolate,
       fields_ptr,
       fields_count * sizeof(*fields_ptr));
-  Local<Float64Array> fields =
-      Float64Array::New(fields_ab, 0, fields_count);
+  Local<Uint32Array> fields =
+      Uint32Array::New(fields_ab, 0, fields_count);
   target->Set(context,
               FIXED_ONE_BYTE_STRING(isolate, "async_hook_fields"),
               fields).FromJust();
@@ -248,7 +251,7 @@ void AsyncWrap::Initialize(Local<Object> target,
 }
 
 
-void AsyncWrap::GetUid(const v8::FunctionCallbackInfo<v8::Value>& args) {
+void AsyncWrap::GetUid(const FunctionCallbackInfo<Value>& args) {
   AsyncWrap* wrap;
   args.GetReturnValue().Set(-1);
   ASSIGN_OR_RETURN_UNWRAP(&wrap, args.Holder());
@@ -277,73 +280,80 @@ static const char* GetProviderName(AsyncWrap::ProviderType provider) {
 
 AsyncWrap::AsyncWrap(Environment* env,
                      Local<Object> object,
-                     ProviderType provider,
-                     AsyncWrap* parent)
-    : BaseObject(env, object), bits_(static_cast<uint32_t>(provider) << 1),
-      uid_(env->get_async_wrap_uid()) {
+                     ProviderType provider)
+    : BaseObject(env, object),
+      provider_type_(provider) {
   CHECK_NE(provider, PROVIDER_NONE);
   CHECK_GE(object->InternalFieldCount(), 1);
 
   // Shift provider value over to prevent id collision.
   persistent().SetWrapperClassId(NODE_ASYNC_ID_OFFSET + provider);
 
-  Local<Function> init_fn = env->async_hooks_init_function();
+  // Use ther Reset() call to call the init() callbacks.
+  Reset();
+}
 
-  // No init callback exists, no reason to go on.
-  if (init_fn.IsEmpty())
+
+AsyncWrap::~AsyncWrap() {
+  if (env()->async_hooks()->fields()[AsyncHooks::kDestroy] == 0) {
     return;
-
-  HandleScope scope(env->isolate());
-
-  Local<Value> argv[] = {
-    Number::New(env->isolate(), get_id()),
-    Int32::New(env->isolate(), provider),
-    Null(env->isolate()),
-    Null(env->isolate())
-  };
-
-  if (parent != nullptr) {
-    argv[2] = Number::New(env->isolate(), parent->get_id());
-    argv[3] = parent->object();
   }
+  // TODO(trevnorris): All this needs to be placed in a uv_idle_t and be made
+  // sure to run when it's safe to execute JS (i.e. not in GC).
+  // https://github.com/nodejs/node/pull/9467#issuecomment-259297798
 
-  TryCatch try_catch(env->isolate());
+  HandleScope scope(env()->isolate());
+  Local<Function> fn = env()->async_hooks_destroy_function();
+  Local<Value> argv = Number::New(env()->isolate(), get_id());
 
-  MaybeLocal<Value> ret =
-      init_fn->Call(env->context(), object, arraysize(argv), argv);
+  TryCatch try_catch(env()->isolate());
+  MaybeLocal<Value> ret = fn->Call(
+      env()->context(), Undefined(env()->isolate()), 1, &argv);
 
   if (ret.IsEmpty()) {
-    ClearFatalExceptionHandlers(env);
-    FatalException(env->isolate(), try_catch);
+    ClearFatalExceptionHandlers(env());
+    FatalException(env()->isolate(), try_catch);
   }
-
-  bits_ |= 1;  // ran_init_callback() is true now.
 }
 
 
-inline AsyncWrap::~AsyncWrap() {
-  if (!ran_init_callback())
+// Generalized call for both the constructor and for handles that are pooled
+// and reused over their lifetime. This way a new uid can be assigned when
+// the resource is pulled out of the pool and put back into use.
+void AsyncWrap::Reset() {
+  AsyncHooks* async_hooks = env()->async_hooks();
+  id_ = env()->new_async_uid();
+  trigger_id_ = env()->exchange_init_trigger_id(0);
+
+  // Nothing to execute, so can continue normally.
+  if (async_hooks->fields()[AsyncHooks::kInit] == 0) {
     return;
-
-  Local<Function> fn = env()->async_hooks_destroy_function();
-  if (!fn.IsEmpty()) {
-    HandleScope scope(env()->isolate());
-    Local<Value> uid = Number::New(env()->isolate(), get_id());
-    TryCatch try_catch(env()->isolate());
-    MaybeLocal<Value> ret =
-        fn->Call(env()->context(), Null(env()->isolate()), 1, &uid);
-    if (ret.IsEmpty()) {
-      ClearFatalExceptionHandlers(env());
-      FatalException(env()->isolate(), try_catch);
-    }
   }
-}
 
+  HandleScope scope(env()->isolate());
 
-void AsyncWrap::GetUid(const FunctionCallbackInfo<Value>& args) {
-  AsyncWrap* wrap;
-  ASSIGN_OR_RETURN_UNWRAP(&wrap, args.Holder());
-  args.GetReturnValue().Set(wrap->get_id());
+  Local<Function> init_fn = env()->async_hooks_init_function();
+
+  Local<Value> argv[] = {
+    Number::New(env()->isolate(), get_id()),
+    // TODO(trevnorris): Very slow and bad. Use another way to more quickly get
+    // the correct provider string. Something like storing them on
+    // PER_ISOLATE_STRING_PROPERTIES in env.h
+    String::NewFromUtf8(env()->isolate(),
+                        GetProviderName(provider_type()),
+                        NewStringType::kNormal).ToLocalChecked(),
+    object(),
+    Number::New(env()->isolate(), get_trigger_id()),
+  };
+
+  TryCatch try_catch(env()->isolate());
+  MaybeLocal<Value> ret = init_fn->Call(
+      env()->context(), object(), arraysize(argv), argv);
+
+  if (ret.IsEmpty()) {
+    ClearFatalExceptionHandlers(env());
+    FatalException(env()->isolate(), try_catch);
+  }
 }
 
 
@@ -352,11 +362,10 @@ Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
                                      Local<Value>* argv) {
   CHECK(env()->context() == env()->isolate()->GetCurrentContext());
 
-  Local<Function> before_fn = env()->async_hooks_before_function();
-  Local<Function> after_fn = env()->async_hooks_after_function();
-  Local<Value> uid = Number::New(env()->isolate(), get_id());
+  AsyncHooks* async_hooks = env()->async_hooks();
   Local<Object> context = object();
   Local<Object> domain;
+  Local<Value> uid;
   bool has_domain = false;
 
   Environment::AsyncCallbackScope callback_scope(env());
@@ -381,9 +390,15 @@ Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
     }
   }
 
-  if (ran_init_callback() && !before_fn.IsEmpty()) {
+  // Want currentId() to return the correct value from the callbacks.
+  AsyncHooks::ExecScope exec_scope(env(), get_id(), get_trigger_id());
+
+  if (async_hooks->fields()[AsyncHooks::kBefore] > 0) {
+    uid = Number::New(env()->isolate(), get_id());
+    Local<Function> fn = env()->async_hooks_before_function();
     TryCatch try_catch(env()->isolate());
-    MaybeLocal<Value> ar = before_fn->Call(env()->context(), context, 1, &uid);
+    MaybeLocal<Value> ar = fn->Call(
+        env()->context(), Undefined(env()->isolate()), 1, &uid);
     if (ar.IsEmpty()) {
       ClearFatalExceptionHandlers(env());
       FatalException(env()->isolate(), try_catch);
@@ -391,23 +406,29 @@ Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
     }
   }
 
-  Local<Value> ret = cb->Call(context, argc, argv);
+  // Finally... Get to running the user's callback.
+  MaybeLocal<Value> ret = cb->Call(env()->context(), context, argc, argv);
 
-  if (ran_init_callback() && !after_fn.IsEmpty()) {
-    Local<Value> did_throw = Boolean::New(env()->isolate(), ret.IsEmpty());
-    Local<Value> vals[] = { uid, did_throw };
+  Local<Value> ret_v;
+  if (!ret.ToLocal(&ret_v)) {
+    return Local<Value>();
+  }
+
+  // TODO(trevnorris): It will be confusing for developers if there's a caught
+  // uncaught exception. Which leads to none of their after() callbacks being
+  // called.
+  if (async_hooks->fields()[AsyncHooks::kAfter] > 0) {
+    if (uid.IsEmpty())
+      uid = Number::New(env()->isolate(), get_id());
+    Local<Function> fn = env()->async_hooks_after_function();
     TryCatch try_catch(env()->isolate());
-    MaybeLocal<Value> ar =
-        after_fn->Call(env()->context(), context, arraysize(vals), vals);
+    MaybeLocal<Value> ar = fn->Call(
+        env()->context(), Undefined(env()->isolate()), 1, &uid);
     if (ar.IsEmpty()) {
       ClearFatalExceptionHandlers(env());
       FatalException(env()->isolate(), try_catch);
       return Local<Value>();
     }
-  }
-
-  if (ret.IsEmpty()) {
-    return ret;
   }
 
   if (has_domain) {
@@ -420,8 +441,11 @@ Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
     }
   }
 
+  // The execution scope of the id and trigger_id only go this far.
+  exec_scope.Dispose();
+
   if (callback_scope.in_makecallback()) {
-    return ret;
+    return ret_v;
   }
 
   Environment::TickInfo* tick_info = env()->tick_info();
@@ -434,14 +458,15 @@ Local<Value> AsyncWrap::MakeCallback(const Local<Function> cb,
 
   if (tick_info->length() == 0) {
     tick_info->set_index(0);
-    return ret;
+    return ret_v;
   }
 
-  if (env()->tick_callback_function()->Call(process, 0, nullptr).IsEmpty()) {
-    return Local<Value>();
-  }
-
-  return ret;
+  MaybeLocal<Value> rcheck =
+      env()->tick_callback_function()->Call(env()->context(),
+                                            process,
+                                            0,
+                                            nullptr);
+  return rcheck.IsEmpty() ? Local<Value>() : ret_v;
 }
 
 }  // namespace node

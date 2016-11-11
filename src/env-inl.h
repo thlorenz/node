@@ -170,7 +170,6 @@ inline Environment::Environment(IsolateData* isolate_data,
       printed_error_(false),
       trace_sync_io_(false),
       makecallback_cntr_(0),
-      async_wrap_uid_(0),
       debugger_agent_(this),
 #if HAVE_INSPECTOR
       inspector_agent_(this),
@@ -290,8 +289,60 @@ inline void Environment::set_trace_sync_io(bool value) {
   trace_sync_io_ = value;
 }
 
-inline double Environment::get_async_wrap_uid() {
-  return ++async_wrap_uid_;
+inline double Environment::new_async_uid() {
+  return ++async_hooks()->uid_fields()[AsyncHooks::kAsyncUidCntr];
+}
+
+inline double Environment::current_async_id() {
+  return async_hooks()->uid_fields()[AsyncHooks::kCurrentId];
+}
+
+inline double Environment::exchange_current_async_id(const double id) {
+  const double oid = async_hooks()->uid_fields()[AsyncHooks::kCurrentId];
+  async_hooks()->uid_fields()[AsyncHooks::kCurrentId] = id;
+  return oid;
+}
+
+inline double Environment::trigger_id() {
+  return async_hooks()->uid_fields()[AsyncHooks::kTriggerId];
+}
+
+inline double Environment::exchange_trigger_id(const double id) {
+  const double oid = async_hooks()->uid_fields()[AsyncHooks::kTriggerId];
+  async_hooks()->uid_fields()[AsyncHooks::kTriggerId] = id;
+  return oid;
+}
+
+inline double Environment::exchange_init_trigger_id(const double id) {
+  auto uid_fields = async_hooks()->uid_fields();
+  const double oid = uid_fields[AsyncHooks::kInitTriggerId];
+  uid_fields[AsyncHooks::kInitTriggerId] = id;
+  // TODO(trevnorris): The trigger id has been replaced with the current id
+  // when no trigger id was made availavble. but should that be done here or
+  // left up to the calling code?
+  return oid <= 0 ? uid_fields[AsyncHooks::kCurrentId] : oid;
+}
+
+inline void Environment::set_init_trigger_id(const double id) {
+  async_hooks()->uid_fields()[AsyncHooks::kInitTriggerId] = id;
+}
+
+inline void Environment::erase_fd_async_id(int fd) {
+  fd_async_id_map_.erase(fd);
+}
+
+inline void Environment::get_fd_async_id(int fd, double (&ids)[2]) {
+  double (&fdd)[2] = fd_async_id_map_[fd];
+  ids[0] = fdd[0];
+  ids[1] = fdd[1];
+}
+
+inline void Environment::insert_fd_async_ids(int fd,
+                                             double id,
+                                             double trigger_id) {
+  double (&fdd)[2] = fd_async_id_map_[fd];
+  fdd[0] = id;
+  fdd[1] = trigger_id;
 }
 
 inline uint32_t* Environment::heap_statistics_buffer() const {
