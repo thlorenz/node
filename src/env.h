@@ -373,6 +373,7 @@ class Environment {
         uid_fields_[AsyncHooks::kCurrentId] = id_;
         uid_fields_[AsyncHooks::kTriggerId] = trigger_id_;
       }
+
      private:
       double* uid_fields_;
       const double id_;
