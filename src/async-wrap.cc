@@ -226,6 +226,7 @@ void AsyncWrap::Initialize(Local<Object> target,
   SET_HOOKS_CONSTANT(kCurrentId);
   SET_HOOKS_CONSTANT(kTriggerId);
   SET_HOOKS_CONSTANT(kInitTriggerId);
+  SET_HOOKS_CONSTANT(kScopedTriggerId);
 #undef SET_HOOKS_CONSTANT
   target->Set(context, FIXED_ONE_BYTE_STRING(isolate, "constants"), constants)
       .FromJust();
