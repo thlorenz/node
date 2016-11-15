@@ -32,14 +32,6 @@ using AsyncHooks = node::Environment::AsyncHooks;
 
 namespace node {
 
-#define SET_HOOKS_CONSTANT(isolate, context, obj, name)                       \
-  do {                                                                        \
-    obj->ForceSet(context,                                                    \
-                  FIXED_ONE_BYTE_STRING(isolate, #name),                      \
-                  Integer::New(isolate, AsyncHooks::name),                    \
-                  v8::ReadOnly).FromJust();                                   \
-  } while (0)
-
 static const char* const provider_names[] = {
 #define V(PROVIDER)                                                           \
   #PROVIDER,
@@ -219,25 +211,32 @@ void AsyncWrap::Initialize(Local<Object> target,
               FIXED_ONE_BYTE_STRING(isolate, "async_uid_fields"),
               uid_fields).FromJust();
 
-  // TODO(trevnorris): Passing all this in feels bloated, but don't like
-  // depending on "magic" variables available in the macro.
   Local<Object> constants = Object::New(isolate);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kInit);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kBefore);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kAfter);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kDestroy);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kActiveHooks);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kAsyncUidCntr);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kCurrentId);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kTriggerId);
-  SET_HOOKS_CONSTANT(isolate, context, constants, kInitTriggerId);
+#define SET_HOOKS_CONSTANT(name)                                              \
+  constants->ForceSet(context,                                                \
+                      FIXED_ONE_BYTE_STRING(isolate, #name),                  \
+                      Integer::New(isolate, AsyncHooks::name),                \
+                      v8::ReadOnly).FromJust()
+  SET_HOOKS_CONSTANT(kInit);
+  SET_HOOKS_CONSTANT(kBefore);
+  SET_HOOKS_CONSTANT(kAfter);
+  SET_HOOKS_CONSTANT(kDestroy);
+  SET_HOOKS_CONSTANT(kActiveHooks);
+  SET_HOOKS_CONSTANT(kAsyncUidCntr);
+  SET_HOOKS_CONSTANT(kCurrentId);
+  SET_HOOKS_CONSTANT(kTriggerId);
+  SET_HOOKS_CONSTANT(kInitTriggerId);
+#undef SET_HOOKS_CONSTANT
   target->Set(context, FIXED_ONE_BYTE_STRING(isolate, "constants"), constants)
       .FromJust();
 
   Local<Object> async_providers = Object::New(isolate);
 #define V(PROVIDER)                                                           \
-  async_providers->Set(FIXED_ONE_BYTE_STRING(isolate, #PROVIDER),             \
-      Integer::New(isolate, AsyncWrap::PROVIDER_ ## PROVIDER));
+  async_providers->ForceSet(                                                  \
+      context,                                                                \
+      FIXED_ONE_BYTE_STRING(isolate, #PROVIDER),                              \
+      Integer::New(isolate, AsyncWrap::PROVIDER_ ## PROVIDER),                \
+      v8::ReadOnly).FromJust();
   NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
   target->Set(FIXED_ONE_BYTE_STRING(isolate, "Providers"), async_providers);
