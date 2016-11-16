@@ -64,7 +64,7 @@ void TCPWrap::Initialize(Local<Object> target,
                                                  "onconnection"),
                              Null(env->isolate()));
 
-  env->SetProtoMethod(t, "getUid", AsyncWrap::GetUid);
+  env->SetProtoMethod(t, "getAsyncId", AsyncWrap::GetAsyncId);
 
   env->SetProtoMethod(t, "close", HandleWrap::Close);
 
@@ -100,7 +100,7 @@ void TCPWrap::Initialize(Local<Object> target,
   };
   auto cwt = FunctionTemplate::New(env->isolate(), constructor);
   cwt->InstanceTemplate()->SetInternalFieldCount(1);
-  env->SetProtoMethod(cwt, "getUid", AsyncWrap::GetUid);
+  env->SetProtoMethod(cwt, "getAsyncId", AsyncWrap::GetAsyncId);
   cwt->SetClassName(FIXED_ONE_BYTE_STRING(env->isolate(), "TCPConnectWrap"));
   target->Set(FIXED_ONE_BYTE_STRING(env->isolate(), "TCPConnectWrap"),
               cwt->GetFunction());

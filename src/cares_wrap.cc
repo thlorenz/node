@@ -1384,7 +1384,7 @@ static void Initialize(Local<Object> target,
   Local<FunctionTemplate> aiw =
       FunctionTemplate::New(env->isolate(), NewGetAddrInfoReqWrap);
   aiw->InstanceTemplate()->SetInternalFieldCount(1);
-  env->SetProtoMethod(aiw, "getUid", AsyncWrap::GetUid);
+  env->SetProtoMethod(aiw, "getAsyncId", AsyncWrap::GetAsyncId);
   aiw->SetClassName(
       FIXED_ONE_BYTE_STRING(env->isolate(), "GetAddrInfoReqWrap"));
   target->Set(FIXED_ONE_BYTE_STRING(env->isolate(), "GetAddrInfoReqWrap"),
@@ -1393,7 +1393,7 @@ static void Initialize(Local<Object> target,
   Local<FunctionTemplate> niw =
       FunctionTemplate::New(env->isolate(), NewGetNameInfoReqWrap);
   niw->InstanceTemplate()->SetInternalFieldCount(1);
-  env->SetProtoMethod(niw, "getUid", AsyncWrap::GetUid);
+  env->SetProtoMethod(niw, "getAsyncId", AsyncWrap::GetAsyncId);
   niw->SetClassName(
       FIXED_ONE_BYTE_STRING(env->isolate(), "GetNameInfoReqWrap"));
   target->Set(FIXED_ONE_BYTE_STRING(env->isolate(), "GetNameInfoReqWrap"),
@@ -1402,7 +1402,7 @@ static void Initialize(Local<Object> target,
   Local<FunctionTemplate> qrw =
       FunctionTemplate::New(env->isolate(), NewQueryReqWrap);
   qrw->InstanceTemplate()->SetInternalFieldCount(1);
-  env->SetProtoMethod(qrw, "getUid", AsyncWrap::GetUid);
+  env->SetProtoMethod(qrw, "getAsyncId", AsyncWrap::GetAsyncId);
   qrw->SetClassName(
       FIXED_ONE_BYTE_STRING(env->isolate(), "QueryReqWrap"));
   target->Set(FIXED_ONE_BYTE_STRING(env->isolate(), "QueryReqWrap"),

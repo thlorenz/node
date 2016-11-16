@@ -32,7 +32,7 @@ class ProcessWrap : public HandleWrap {
     constructor->InstanceTemplate()->SetInternalFieldCount(1);
     constructor->SetClassName(FIXED_ONE_BYTE_STRING(env->isolate(), "Process"));
 
-    env->SetProtoMethod(constructor, "getUid", AsyncWrap::GetUid);
+    env->SetProtoMethod(constructor, "getAsyncId", AsyncWrap::GetAsyncId);
 
     env->SetProtoMethod(constructor, "close", HandleWrap::Close);
 

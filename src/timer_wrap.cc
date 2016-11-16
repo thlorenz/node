@@ -35,7 +35,7 @@ class TimerWrap : public HandleWrap {
 
     env->SetTemplateMethod(constructor, "now", Now);
 
-    env->SetProtoMethod(constructor, "getUid", AsyncWrap::GetUid);
+    env->SetProtoMethod(constructor, "getAsyncId", AsyncWrap::GetAsyncId);
 
     env->SetProtoMethod(constructor, "close", HandleWrap::Close);
     env->SetProtoMethod(constructor, "ref", HandleWrap::Ref);
