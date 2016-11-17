@@ -64,6 +64,8 @@ class AsyncWrap : public BaseObject {
 
   static void GetAsyncId(const v8::FunctionCallbackInfo<v8::Value>& args);
 
+  static void AsyncReset(const v8::FunctionCallbackInfo<v8::Value>& args);
+
   inline ProviderType provider_type() const;
 
   inline double get_id() const;
