@@ -8,6 +8,7 @@
 #include "v8.h"
 #include "v8-profiler.h"
 
+using v8::Array;
 using v8::ArrayBuffer;
 using v8::Context;
 using v8::Float64Array;
@@ -210,6 +211,16 @@ void AsyncWrap::Initialize(Local<Object> target,
   target->Set(context,
               FIXED_ONE_BYTE_STRING(isolate, "async_uid_fields"),
               uid_fields).FromJust();
+
+  // Two arrays used to track the stacks of execution.
+  Local<Array> trigger_scope_stack = Array::New(isolate);
+  target->Set(context,
+              FIXED_ONE_BYTE_STRING(isolate, "trigger_scope_stack"),
+              trigger_scope_stack).FromJust();
+  Local<Array> current_trigger_id_stack = Array::New(isolate);
+  target->Set(context,
+              FIXED_ONE_BYTE_STRING(isolate, "current_trigger_id_stack"),
+              current_trigger_id_stack).FromJust();
 
   Local<Object> constants = Object::New(isolate);
 #define SET_HOOKS_CONSTANT(name)                                              \
