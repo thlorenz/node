@@ -315,12 +315,11 @@ inline double Environment::exchange_trigger_id(const double id) {
 
 inline double Environment::exchange_init_trigger_id(const double id) {
   auto uid_fields = async_hooks()->uid_fields();
-  const double oid = uid_fields[AsyncHooks::kInitTriggerId];
+  double tid = uid_fields[AsyncHooks::kInitTriggerId];
   uid_fields[AsyncHooks::kInitTriggerId] = id;
-  // TODO(trevnorris): The trigger id has been replaced with the current id
-  // when no trigger id was made availavble. but should that be done here or
-  // left up to the calling code?
-  return oid <= 0 ? uid_fields[AsyncHooks::kCurrentId] : oid;
+  if (tid <= 0) tid = uid_fields[AsyncHooks::kScopedTriggerId];
+  if (tid <= 0) tid = uid_fields[AsyncHooks::kCurrentId];
+  return tid;
 }
 
 inline void Environment::set_init_trigger_id(const double id) {
