@@ -1457,9 +1457,10 @@ static void GetIdsFromFd(const FunctionCallbackInfo<Value>& args) {
   if (arr->Length() < 2)
     return env->ThrowRangeError("typed array is not large enough");
 
-  void* ptr = arr->Buffer()->GetContents().Data();
-  env->get_fd_async_id(args[0]->Int32Value(),
-                       *reinterpret_cast<double(*)[2]>(ptr));
+  double* ptr = reinterpret_cast<double*>(arr->Buffer()->GetContents().Data());
+  node_fd_async_ids slot = env->get_fd_async_id(args[0]->Int32Value());
+  ptr[0] = slot.async_id;
+  ptr[1] = slot.trigger_id;
   args.GetReturnValue().Set(arr);
 }
 

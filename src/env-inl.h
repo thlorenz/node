@@ -330,18 +330,14 @@ inline void Environment::erase_fd_async_id(int fd) {
   fd_async_id_map_.erase(fd);
 }
 
-inline void Environment::get_fd_async_id(int fd, double (&ids)[2]) {
-  double (&fdd)[2] = fd_async_id_map_[fd];
-  ids[0] = fdd[0];
-  ids[1] = fdd[1];
+inline node_fd_async_ids Environment::get_fd_async_id(int fd) {
+  return fd_async_id_map_[fd];
 }
 
 inline void Environment::insert_fd_async_ids(int fd,
-                                             double id,
+                                             double async_id,
                                              double trigger_id) {
-  double (&fdd)[2] = fd_async_id_map_[fd];
-  fdd[0] = id;
-  fdd[1] = trigger_id;
+  fd_async_id_map_[fd] = { async_id, trigger_id };
 }
 
 inline uint32_t* Environment::heap_statistics_buffer() const {

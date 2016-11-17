@@ -267,6 +267,11 @@ struct node_ares_task {
   RB_ENTRY(node_ares_task) node;
 };
 
+struct node_fd_async_ids {
+  double async_id;
+  double trigger_id;
+};
+
 RB_HEAD(node_ares_task_list, node_ares_task);
 
 class IsolateData {
@@ -540,8 +545,8 @@ class Environment {
 
   // For propagating hook id's with a file descriptor.
   inline void erase_fd_async_id(int fd);
-  inline void get_fd_async_id(int fd, double (&ids)[2]);
-  inline void insert_fd_async_ids(int fd, double id, double trigger_id);
+  inline node_fd_async_ids get_fd_async_id(int fd);
+  inline void insert_fd_async_ids(int fd, double async_id, double trigger_id);
 
   inline uint32_t* heap_statistics_buffer() const;
   inline void set_heap_statistics_buffer(uint32_t* pointer);
@@ -639,7 +644,7 @@ class Environment {
   bool printed_error_;
   bool trace_sync_io_;
   size_t makecallback_cntr_;
-  std::unordered_map<int, double[2]> fd_async_id_map_;
+  std::unordered_map<int, node_fd_async_ids> fd_async_id_map_;
   debugger::Agent debugger_agent_;
 #if HAVE_INSPECTOR
   inspector::Agent inspector_agent_;
