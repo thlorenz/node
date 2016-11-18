@@ -113,6 +113,7 @@ namespace node {
   V(flags_string, "flags")                                                    \
   V(gid_string, "gid")                                                        \
   V(handle_string, "handle")                                                  \
+  V(handle_u_string, "_handle")                                               \
   V(heap_total_string, "heapTotal")                                           \
   V(heap_used_string, "heapUsed")                                             \
   V(homedir_string, "homedir")                                                \

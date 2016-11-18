@@ -38,6 +38,16 @@
 # define NODE__HAVE_TLSEXT_STATUS_CB
 #endif  // !defined(OPENSSL_NO_TLSEXT) && defined(SSL_CTX_set_tlsext_status_cb)
 
+#define DESTRUCT_CLASS()                                                      \
+  do {                                                                        \
+    object()->Set(                                                            \
+        env()->context(),                                                     \
+        env()->handle_u_string(),                                             \
+        Null(env()->isolate())).FromJust();                                   \
+    persistent().Reset();                                                     \
+    ClearWrap(object());                                                      \
+  } while (0)
+
 namespace node {
 namespace crypto {
 
@@ -502,9 +512,9 @@ class Hmac : public BaseObject {
 class Hash : public BaseObject {
  public:
   ~Hash() override {
-    if (!initialised_)
-      return;
-    EVP_MD_CTX_cleanup(&mdctx_);
+    DESTRUCT_CLASS();
+    if (initialised_)
+      EVP_MD_CTX_cleanup(&mdctx_);
   }
 
   static void Initialize(Environment* env, v8::Local<v8::Object> target);
@@ -520,13 +530,12 @@ class Hash : public BaseObject {
   Hash(Environment* env, v8::Local<v8::Object> wrap)
       : BaseObject(env, wrap),
         initialised_(false) {
-    MakeWeak<Hash>(this);
+    Wrap(object(), this);
   }
 
  private:
   EVP_MD_CTX mdctx_; /* coverity[member_decl] */
   bool initialised_;
-  bool finalized_;
 };
 
 class SignBase : public BaseObject {
@@ -726,6 +735,8 @@ void InitCrypto(v8::Local<v8::Object> target);
 
 }  // namespace crypto
 }  // namespace node
+
+#undef DESTRUCT_CLASS
 
 #endif  // defined(NODE_WANT_INTERNALS) && NODE_WANT_INTERNALS
 

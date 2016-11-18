@@ -3735,9 +3735,11 @@ void Hash::New(const FunctionCallbackInfo<Value>& args) {
 
   Hash* hash = new Hash(env, args.This());
   if (!hash->HashInit(*hash_type)) {
+    delete hash;
     return ThrowCryptoError(env, ERR_get_error(),
                             "Digest method not supported");
   }
+  hash->initialised_ = true;
 }
 
 
@@ -3750,15 +3752,11 @@ bool Hash::HashInit(const char* hash_type) {
   if (EVP_DigestInit_ex(&mdctx_, md, nullptr) <= 0) {
     return false;
   }
-  initialised_ = true;
-  finalized_ = false;
   return true;
 }
 
 
 bool Hash::HashUpdate(const char* data, int len) {
-  if (!initialised_)
-    return false;
   EVP_DigestUpdate(&mdctx_, data, len);
   return true;
 }
@@ -3768,16 +3766,11 @@ void Hash::HashUpdate(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
   Hash* hash;
-  ASSIGN_OR_RETURN_UNWRAP(&hash, args.Holder());
+  ASSIGN_OR_RETURN_UNWRAP(&hash,
+                          args.Holder(),
+                          env->ThrowError("Digest already called"));
 
   THROW_AND_RETURN_IF_NOT_STRING_OR_BUFFER(args[0], "Data");
-
-  if (!hash->initialised_) {
-    return env->ThrowError("Not initialized");
-  }
-  if (hash->finalized_) {
-    return env->ThrowError("Digest already called");
-  }
 
   // Only copy the data if we have to, because it's a string
   bool r;
@@ -3802,14 +3795,9 @@ void Hash::HashDigest(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
   Hash* hash;
-  ASSIGN_OR_RETURN_UNWRAP(&hash, args.Holder());
-
-  if (!hash->initialised_) {
-    return env->ThrowError("Not initialized");
-  }
-  if (hash->finalized_) {
-    return env->ThrowError("Digest already called");
-  }
+  ASSIGN_OR_RETURN_UNWRAP(&hash,
+                          args.Holder(),
+                          env->ThrowError("Digest already called"));
 
   enum encoding encoding = BUFFER;
   if (args.Length() >= 1) {
@@ -3823,13 +3811,13 @@ void Hash::HashDigest(const FunctionCallbackInfo<Value>& args) {
 
   EVP_DigestFinal_ex(&hash->mdctx_, md_value, &md_len);
   EVP_MD_CTX_cleanup(&hash->mdctx_);
-  hash->finalized_ = true;
 
   Local<Value> rc = StringBytes::Encode(env->isolate(),
                                         reinterpret_cast<const char*>(md_value),
                                         md_len,
                                         encoding);
   args.GetReturnValue().Set(rc);
+  delete hash;
 }
 
 
