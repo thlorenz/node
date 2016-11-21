@@ -108,6 +108,7 @@ void TCPWrap::New(const FunctionCallbackInfo<Value>& args) {
   // This constructor should not be exposed to public javascript.
   // Therefore we assert that we are not trying to call this as a
   // normal function.
+  TRACE_EVENT_BEGIN0("tcp", "tcpwrap.new");
   CHECK(args.IsConstructCall());
   Environment* env = Environment::GetCurrent(args);
   TCPWrap* wrap;
@@ -120,6 +121,7 @@ void TCPWrap::New(const FunctionCallbackInfo<Value>& args) {
     UNREACHABLE();
   }
   CHECK(wrap);
+  TRACE_EVENT_END0("tcp", "tcpwrap.new");
 }
 
 

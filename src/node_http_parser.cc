@@ -603,6 +603,8 @@ class Parser : public AsyncWrap {
   Local<Value> Execute(char* data, size_t len) {
     EscapableHandleScope scope(env()->isolate());
 
+    TRACE_EVENT_BEGIN0("http", "http_parser.execute");
+
     current_buffer_len_ = len;
     current_buffer_data_ = data;
     got_exception_ = false;
@@ -622,6 +624,9 @@ class Parser : public AsyncWrap {
       return scope.Escape(Local<Value>());
 
     Local<Integer> nparsed_obj = Integer::New(env()->isolate(), nparsed);
+
+    TRACE_EVENT_END0("http", "http_parser.execute");
+
     // If there was a parse error in one of the callbacks
     // TODO(bnoordhuis) What if there is an error on EOF?
     if (!parser_.upgrade && nparsed != len) {
