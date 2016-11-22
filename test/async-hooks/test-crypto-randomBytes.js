@@ -11,7 +11,7 @@ if (!common.hasCrypto) {
 const hooks = initHooks()
 
 hooks.enable()
-crypto.randomBytes(1, onrandomBytes)
+crypto.randomBytes(1, common.mustCall(onrandomBytes))
 
 function onrandomBytes() {
   const as = hooks.activities()

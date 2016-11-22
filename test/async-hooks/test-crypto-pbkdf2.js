@@ -11,8 +11,7 @@ if (!common.hasCrypto) {
 const hooks = initHooks()
 
 hooks.enable()
-crypto.pbkdf2('password', 'salt', 1, 20, 'sha256', onpbkdf2)
-
+crypto.pbkdf2('password', 'salt', 1, 20, 'sha256', common.mustCall(onpbkdf2))
 
 function onpbkdf2() {
   const as = hooks.activities()
