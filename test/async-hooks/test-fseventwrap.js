@@ -3,11 +3,6 @@ const assert = require('assert')
 const initHooks = require('./init-hooks')
 const fs = require('fs')
 
-if (!common.hasCrypto) {
-  common.skip('missing crypto')
-  return
-}
-
 const hooks = initHooks()
 
 hooks.enable()
