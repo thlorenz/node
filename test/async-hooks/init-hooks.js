@@ -14,8 +14,8 @@ class ActivityCollector {
     h[hook].push((time[0] * 1e9) + time[1])
   }
 
-  init(uid, type, parentUid, handle) {
-    const activity = { uid,  type, parentUid }
+  init(uid, type, triggerId, handle) {
+    const activity = { uid,  type, triggerId }
     this._stamp(activity, 'init')
     this._activities.set(uid, activity)
   }

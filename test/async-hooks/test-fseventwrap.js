@@ -23,7 +23,7 @@ function onexit() {
   const a = as[0]
   assert.equal(a.type, 'FSEVENTWRAP', 'fs event wrap')
   assert.equal(typeof a.uid, 'number', 'uid is a number')
-  assert.equal(a.parentUid, 1, 'parent uid 1')
+  assert.equal(a.triggerId, 1, 'parent uid 1')
   assert.equal(a.init.length, 1, 'called init once')
   assert.equal(a.before, null, 'never called before')
   assert.equal(a.after, null, 'never called after')

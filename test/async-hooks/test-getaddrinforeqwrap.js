@@ -17,7 +17,7 @@ function onlookup(err_, ip, family) {
   const a = as[0]
   assert.equal(a.type, 'GETADDRINFOREQWRAP', 'getaddrinforeq wrap')
   assert.equal(typeof a.uid, 'number', 'uid is a number')
-  assert.equal(a.parentUid, 1, 'parent uid 1')
+  assert.equal(a.triggerId, 1, 'parent uid 1')
   assert.equal(a.init.length, 1, 'called init once when inside callback')
   assert.equal(a.before.length, 1, 'before once when inside callback')
   assert.equal(a.after, null, 'never called after when inside callback')

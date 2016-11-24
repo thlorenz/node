@@ -29,7 +29,7 @@ function onexit() {
   const a = as[0]
   assert.equal(a.type, 'FSREQWRAP', 'fs req wrap')
   assert.equal(typeof a.uid, 'number', 'uid is a number')
-  assert.equal(a.parentUid, 1, 'parent uid 1')
+  assert.equal(a.triggerId, 1, 'parent uid 1')
   assert.equal(a.after.length, 1, 'called after once when process exits')
   assert.equal(a.destroy.length, 1, 'called destroy once when process exits')
 }

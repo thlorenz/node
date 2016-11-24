@@ -32,6 +32,6 @@ function onexit() {
   const a = as[0]
   assert.equal(a.type, 'RANDOMBYTESREQUEST', 'random byte request')
   assert.equal(typeof a.uid, 'number', 'uid is a number')
-  assert.equal(a.parentUid, 1, 'parent uid 1')
+  assert.equal(a.triggerId, 1, 'parent uid 1')
   assert.equal(a.before.length, 1, 'called before once')
 }

@@ -12,28 +12,28 @@ function onread() {
   /* Example hooks
     [   { uid: 5,
           type: 'FSREQWRAP',
-          parentUid: 1,
+          triggerId: 1,
           init: [ 789832 ],
           before: [ 1559419 ],
           after: [ 1934101 ],
           destroy: [ 2089716 ] },
         { uid: 6,
           type: 'FSREQWRAP',
-          parentUid: 5,
+          triggerId: 5,
           init: [ 1761235 ],
           before: [ 2132142 ],
           after: [ 2446294 ],
           destroy: [ 2468867 ] },
         { uid: 7,
           type: 'FSREQWRAP',
-          parentUid: 6,
+          triggerId: 6,
           init: [ 2406482 ],
           before: [ 2492567 ],
           after: [ 2645263 ],
           destroy: [ 2650261 ] },
         { uid: 8,
           type: 'FSREQWRAP',
-          parentUid: 7,
+          triggerId: 7,
           init: [ 2632196 ],
           before: [ 2678529 ] } ]
   */
@@ -43,7 +43,7 @@ function onread() {
     const a = as[i]
     assert.equal(a.type, 'FSREQWRAP', 'fs req wrap')
     assert.equal(typeof a.uid, 'number', 'uid is a number')
-    assert.equal(a.parentUid, lastParent, 'parent uid 1')
+    assert.equal(a.triggerId, lastParent, 'parent uid 1')
     assert.equal(a.init.length, 1, 'called init once while in callback')
     assert.equal(a.before.length, 1, 'called before once while in callback')
     // this callback is called from within the last fs req callback therefore
