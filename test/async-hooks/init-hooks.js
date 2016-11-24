@@ -39,21 +39,38 @@ class ActivityCollector {
   }
 
   sanityCheck() {
+    function activityString(a) {
+      return util.inspect(a, false, 5, true)
+    }
+
     const violations = []
     function v(msg) { violations.push(msg) }
     for (let a of this._activities.values()) {
       if (a.init && a.init.length > 1) {
-        v('Activity inited twice')
+        v('Activity inited twice\n' + activityString(a))
       }
       if (a.destroy && a.destroy.length > 1) {
-        v('Activity destroyed twice')
+        v('Activity destroyed twice\n' + activityString(a))
       }
       if (a.before && a.after) {
         if (a.before.length < a.after.length) {
-          v('Activity called after without calling before')
+          v('Activity called after without calling before\n' + activityString(a))
         }
         if (a.before.some((x, idx) => x > a.after[idx])) {
-          v('Activity had an instance where "after" was invoked before "before"')
+          v('Activity had an instance where "after" was invoked before "before"\n'
+            + activityString(a))
+        }
+      }
+      if (a.before && a.destroy) {
+        if (a.before.some((x, idx) => x > a.destroy[idx])) {
+          v('Activity had an instance where "destroy" was invoked before "before"\n'
+            + activityString(a))
+        }
+      }
+      if (a.after && a.destroy) {
+        if (a.after.some((x, idx) => x > a.destroy[idx])) {
+          v('Activity had an instance where "destroy" was invoked before "after"\n'
+            + activityString(a))
         }
       }
     }
