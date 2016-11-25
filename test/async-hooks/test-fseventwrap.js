@@ -1,6 +1,7 @@
 const common = require('../common')
 const assert = require('assert')
 const initHooks = require('./init-hooks')
+const { checkInvocations } = require('./hook-checks')
 const fs = require('fs')
 
 const hooks = initHooks()
@@ -24,8 +25,5 @@ function onexit() {
   assert.equal(a.type, 'FSEVENTWRAP', 'fs event wrap')
   assert.equal(typeof a.uid, 'number', 'uid is a number')
   assert.equal(a.triggerId, 1, 'parent uid 1')
-  assert.equal(a.init.length, 1, 'called init once')
-  assert.equal(a.before, null, 'never called before')
-  assert.equal(a.after, null, 'never called after')
-  assert.equal(a.destroy.length, 1, 'called destroy once')
+  checkInvocations(a, { init: 1, destroy: 1 }, 'when process exits')
 }

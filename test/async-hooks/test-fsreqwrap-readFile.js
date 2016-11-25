@@ -1,6 +1,7 @@
 const common = require('../common')
 const assert = require('assert')
 const initHooks = require('./init-hooks')
+const { checkInvocations } = require('./hook-checks')
 const fs = require('fs')
 
 const hooks = initHooks()
@@ -44,17 +45,15 @@ function onread() {
     assert.equal(a.type, 'FSREQWRAP', 'fs req wrap')
     assert.equal(typeof a.uid, 'number', 'uid is a number')
     assert.equal(a.triggerId, lastParent, 'parent uid 1')
-    assert.equal(a.init.length, 1, 'called init once while in callback')
-    assert.equal(a.before.length, 1, 'called before once while in callback')
     // this callback is called from within the last fs req callback therefore
     // the last req is still going and after/destroy haven't been called yet
+    let after = 1
+    let destroy = 1
     if (i === as.length - 1) {
-      assert.equal(a.after, null, 'never called after while in callback of last req')
-      assert.equal(a.destroy, null, 'never called destroy while in callback of last req')
-    } else {
-      assert.equal(a.after.length, 1, 'called after once while in callback')
-      assert.equal(a.destroy.length, 1, 'called destroy once while in callback')
+      after = null
+      destroy = null
     }
+    checkInvocations(a, { init: 1, before: 1, after, destroy }, 'while in onread callback')
     lastParent = a.uid
   }
 }
@@ -67,6 +66,5 @@ function onexit() {
   const as = hooks.activities()
   const a = as.pop()
   // check that after and destroy was called on the last FSREQWRAP
-  assert.equal(a.after.length, 1, 'called after once for last req on process exit')
-  assert.equal(a.destroy.length, 1, 'called destroy once for last req on process exit')
+  checkInvocations(a, { init: 1, before: 1, after: 1, destroy: 1 }, 'when process exits')
 }

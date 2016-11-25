@@ -1,6 +1,7 @@
 const common = require('../common')
 const assert = require('assert')
 const initHooks = require('./init-hooks')
+const { checkInvocations } = require('./hook-checks')
 const spawn = require('child_process').spawn
 
 const hooks = initHooks()
@@ -23,22 +24,16 @@ const pipe3 = as[3]
 
 assert.equal(processwrap.type, 'PROCESSWRAP', 'process wrap type')
 assert.equal(processwrap.triggerId, 1, 'processwrap triggerId is 1')
-assert.equal(processwrap.init.length, 1, 'process wrap init called synchronously')
-assert.equal(processwrap.before, null, 'process wrap does not call before synchronously')
-assert.equal(processwrap.after, null, 'process wrap does not call after synchronously')
+checkInvocations(processwrap, { init: 1 }, 'processwrap when sleep.spawn was called')
 
 ;[ pipe1, pipe2, pipe3 ].forEach(x => {
   assert(x.type, 'PIPEWRAP', 'pipe wrap type')
   assert.equal(x.triggerId, 1, 'pipe wrap triggerId is 1')
-  assert.equal(x.init.length, 1, 'pipe wrap init called synchronously')
-  assert.equal(x.before, null, 'pipe wrap does not call before synchronously')
-  assert.equal(x.after, null, 'pipe wrap does not call after synchronously')
+  checkInvocations(x, { init: 1 }, 'pipe wrap when sleep.spawn was called')
 })
 
 function onsleepExit(code) {
-  assert.equal(processwrap.before.length, 1, 'process wrap before was called once when invoking exit')
-  assert.equal(processwrap.after, null, 'process wrap does not call after before invoking exit')
-  assert.equal(processwrap.destroy, null, 'process wrap does not call destroy before invoking exit')
+  checkInvocations(processwrap, { init: 1, before: 1 }, 'processwrap while in onsleepExit callback')
   // Sanity check fails for multiple reasons
   // destroy called twice (for stderr) and before after for all pipes
   // hooks.sanityCheck()
@@ -46,8 +41,7 @@ function onsleepExit(code) {
 
 function onsleepClose() {
   hooks.inspect()
-  assert.equal(processwrap.after.length, 1, 'process wrap after was called once when invoking close')
-  assert.equal(processwrap.destroy.length, 1, 'process wrap destroy was called once when invoking close')
+  checkInvocations(processwrap, { init: 1, before: 1, after: 1, destroy: 1 }, 'processwrap while in onsleepClose callback')
   // Sanitiy check fails for similar reasons as in exit,
   // except all pipes have been destroyed twice at this point
 }
