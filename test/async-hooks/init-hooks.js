@@ -80,16 +80,22 @@ class ActivityCollector {
     }
   }
 
-  inspect(depth = 5) {
-    console.log(util.inspect(this.activities, false, depth, true))
+  inspect({ types = null, depth = 5 } = {}) {
+    const activities = types == null ? this.activities : this.activitiesOfTypes(types)
+    console.log(util.inspect(activities, false, depth, true))
   }
 
   get activities() {
     return Array.from(this._activities.values())
   }
+
+  activitiesOfTypes(types) {
+    if (!Array.isArray(types)) types = [ types ]
+    return this.activities.filter(x => !!~types.indexOf(x.type))
+  }
 }
 
-module.exports = function initHooks() {
+exports = module.exports = function initHooks() {
   const collector = new ActivityCollector(process.hrtime())
 
   function asyncInit() { collector.init.apply(collector, arguments) }
@@ -105,7 +111,8 @@ module.exports = function initHooks() {
   })
   return {
     sanityCheck: () => collector.sanityCheck(),
-    inspect: () => collector.inspect(),
+    inspect: x => collector.inspect(x),
+    activitiesOfTypes: x => collector.activitiesOfTypes(x),
     activities: () => collector.activities,
     enable: () => asyncHook.enable(),
     disable: () => asyncHook.disable()
