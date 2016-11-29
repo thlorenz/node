@@ -21,8 +21,8 @@ Showing which kind of async resource is covered by which test:
 | SHUTDOWNWRAP         | test-shutdownwrap.js                   |
 | SIGNALWRAP           |                                        |
 | STATWATCHER          |                                        |
-| TCPWRAP              |                                        |
-| TCPCONNECTWRAP       |                                        |
+| TCPWRAP              | test-tcpwrap.js                        |
+| TCPCONNECTWRAP       | test-tcpwrap.js                        |
 | TIMERWRAP            |                                        |
 | TLSWRAP              |                                        |
 | TTYWRAP              |                                        |
