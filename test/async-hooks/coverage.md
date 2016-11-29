@@ -18,7 +18,7 @@ Showing which kind of async resource is covered by which test:
 | QUERYWRAP            | test-querywrap.js                      |
 | RANDOMBYTESREQUEST   | test-crypto-randomBytes.js             |
 | SENDWRAP             |                                        |
-| SHUTDOWNWRAP         |                                        |
+| SHUTDOWNWRAP         | test-shutdownwrap.js                   |
 | SIGNALWRAP           |                                        |
 | STATWATCHER          |                                        |
 | TCPWRAP              |                                        |
