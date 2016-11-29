@@ -1,3 +1,5 @@
+// NOTE: this also covers process wrap as one is created along with the pipes
+// when we launch the sleep process
 const common = require('../common')
 const assert = require('assert')
 const initHooks = require('./init-hooks')
