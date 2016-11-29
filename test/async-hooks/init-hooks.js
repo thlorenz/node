@@ -80,7 +80,7 @@ class ActivityCollector {
     }
     if (violations.length) {
       console.error(violations.join('\n'))
-      assert.fail('Failed sanity check')
+      assert.fail(violations.length, 0, 'Failed sanity check')
     }
   }
 
