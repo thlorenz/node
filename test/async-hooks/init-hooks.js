@@ -38,7 +38,9 @@ class ActivityCollector {
     this._stamp(h, 'destroy')
   }
 
-  sanityCheck() {
+  sanityCheck(types) {
+    if (!Array.isArray(types)) types = [ types ]
+
     function activityString(a) {
       return util.inspect(a, false, 5, true)
     }
@@ -46,6 +48,8 @@ class ActivityCollector {
     const violations = []
     function v(msg) { violations.push(msg) }
     for (let a of this._activities.values()) {
+      if (types != null && !~types.indexOf(a.type)) continue
+
       if (a.init && a.init.length > 1) {
         v('Activity inited twice\n' + activityString(a))
       }
@@ -110,7 +114,7 @@ exports = module.exports = function initHooks() {
     destroy: asyncDestroy
   })
   return {
-    sanityCheck: () => collector.sanityCheck(),
+    sanityCheck: types => collector.sanityCheck(types),
     inspect: x => collector.inspect(x),
     activitiesOfTypes: x => collector.activitiesOfTypes(x),
     activities: () => collector.activities,
