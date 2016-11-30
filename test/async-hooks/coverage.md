@@ -19,7 +19,7 @@ Showing which kind of async resource is covered by which test:
 | RANDOMBYTESREQUEST   | test-crypto-randomBytes.js             |
 | SENDWRAP             | test-sendwrap.js                       |
 | SHUTDOWNWRAP         | test-shutdownwrap.js                   |
-| SIGNALWRAP           |                                        |
+| SIGNALWRAP           | test-signalwrap.js                     |
 | STATWATCHER          |                                        |
 | TCPWRAP              | test-tcpwrap.js                        |
 | TCPCONNECTWRAP       | test-tcpwrap.js                        |
