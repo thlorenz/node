@@ -77,7 +77,7 @@ function onconnection(c) {
 
 function onserverClosed() {
   checkInvocations(tcp1, { init: 1, before: 1, after: 1, destroy: 1 }, 'tcp1 when server is closed')
-  // TODO:(thlorenz) tcp2 is destroyed twice and has after calls afterwards .. doesn't seem correct
+  // TODO(thlorenz) tcp2 is destroyed twice and has after calls afterwards .. doesn't seem correct
   checkInvocations(tcp2, { init: 1, before: 2, after: 2, destroy: 2 }, 'tcp2 when server is closed')
   checkInvocations(tcp3, { init: 1, before: 1, after: 1, destroy: 1 }, 'tcp3 when server is closed')
   checkInvocations(tcpconnect, { init: 1, before: 1, after: 1, destroy: 1 }, 'when server is closed')
@@ -88,12 +88,16 @@ process.on('exit', onexit)
 function onexit() {
   hooks.disable()
 
-  // TODO:(thlorenz) left inspect statement in on purpose to help fixing the below problem
+  // TODO(thlorenz) left inspect statement in on purpose to help fixing the below problem
   hooks.inspect({ types })
 
   checkInvocations(tcp1, { init: 1, before: 1, after: 1, destroy: 1 }, 'tcp1 when process exits')
-  // TODO:(thlorenz) tcp2 and tcp3 are destroyed twice and has after calls afterwards .. doesn't seem correct
+  // tcp2 and tcp3 are destroyed twice and has after calls afterwards .. doesn't seem correct
   // also see onserverClosed
+  // TODO(thlorenz) investigate how destroys are called twice which shouldn't happen
+  // as the resource destructor cannot ever be run twice
+  // TODO(trevnorris) will fix destroys before afters
+  // should never be possible to call destroy twice since it's invoked from the destructor
   checkInvocations(tcp2, { init: 1, before: 2, after: 2, destroy: 2 }, 'tcp2 when process exits')
   checkInvocations(tcp3, { init: 1, before: 2, after: 2, destroy: 2 }, 'tcp3 when process exits')
   checkInvocations(tcpconnect, { init: 1, before: 1, after: 1, destroy: 1 }, 'when process exits')
