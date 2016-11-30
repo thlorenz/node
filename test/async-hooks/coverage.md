@@ -26,6 +26,6 @@ Showing which kind of async resource is covered by which test:
 | TIMERWRAP            |                                        |
 | TLSWRAP              |                                        |
 | TTYWRAP              |                                        |
-| UDPWRAP              |                                        |
+| UDPWRAP              | test-udpwrap.js                        |
 | WRITEWRAP            |                                        |
 | ZCTX                 |                                        |
