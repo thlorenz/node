@@ -16,6 +16,7 @@ let pipeconnect
 net.createServer(function(c) {
   c.end()
   this.close()
+  // setImmediate here and check for destroy
 }).listen(common.PIPE, common.mustCall(onlisten))
 
 function onlisten() {
@@ -62,8 +63,9 @@ process.on('exit', onexit)
 function onexit() {
   hooks.disable()
   hooks.sanityCheck()
-  // TODO(thlorenz): why have none of those been destroyed and why don't we see an 'after' call
+  // TODO(thlorenz) why have none of those been destroyed and why don't we see an 'after' call
   // for the pipeconnect here
+  // May have to close things (see net.createServer callback)
   checkInvocations(pipe1, { init: 1, before: 1, after: 1 }, 'pipe1, process exiting')
   checkInvocations(pipe2, { init: 1 }, 'pipe2, process exiting')
   checkInvocations(pipeconnect, { init: 1, before: 1 }, 'pipeconnect, process exiting')
