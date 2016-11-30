@@ -55,4 +55,5 @@ function onexit() {
   // TODO(thlorenz) once bugs have been resolved
   // check things here that should've changed since onsleepClose
   // and run a sanity check
+  // see comments inside test-tcpwrap.js
 }
