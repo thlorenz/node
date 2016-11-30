@@ -27,7 +27,7 @@ function onexit() {
   assert.equal(as.length, 1, 'one activity on process exit')
   const a = as[0]
 
-  assert.equal(a.type, 'QUERYWRAP', 'fs req wrap')
+  assert.equal(a.type, 'QUERYWRAP', 'query wrap')
   assert.equal(typeof a.uid, 'number', 'uid is a number')
   assert.equal(typeof a.triggerId, 'number', 'triggerId is a number')
   checkInvocations(a, { init: 1, before: 1, after: 1, destroy: 1 }, 'when process exits')

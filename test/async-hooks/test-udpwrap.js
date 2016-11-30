@@ -10,7 +10,7 @@ const hooks = initHooks()
 hooks.enable()
 const sock = dgram.createSocket('udp4')
 
-const as = hooks.activities(types)
+const as = hooks.activitiesOfTypes(types)
 const udpwrap = as[0]
 assert.equal(as.length, 1, 'one UDPWRAP handle after dgram.createSocket call')
 assert.equal(udpwrap.type, 'UDPWRAP', 'udp wrap')
