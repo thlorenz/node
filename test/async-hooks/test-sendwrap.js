@@ -17,9 +17,12 @@ const sock = dgram
 
 function onlistening() {
   sock.send(
-    new Buffer(2), 0, 2, sock.address().port, '::', common.mustCall(onsent))
+    new Buffer(2), 0, 2, sock.address().port, undefined, common.mustCall(onsent))
 
-  // TODO:(thlorenz) shouldn't init have been called synchronously here?
+  // init not called synchronously because dns lookup alwasy wraps
+  // callback in a next tick even if no lookup is needed
+  // TODO(trevnorris) submit patch to fix creation of tick objects and instead
+  // create the send wrap synchronously.
   assert.equal(hooks.activitiesOfTypes(types).length, 0,
     'no sendwrap after sock connected and sock.send called')
 }
@@ -32,13 +35,13 @@ function onsent() {
   assert.equal(send.type, 'SENDWRAP', 'send wrap')
   assert.equal(typeof send.uid, 'number', 'uid is a number')
   assert.equal(typeof send.triggerId, 'number', 'triggerId is a number')
-  checkInvocations(send, { init :1, destroy: 1 }, 'when message sent')
+  checkInvocations(send, { init :1, before: 1 }, 'when message sent')
 
   sock.close(common.mustCall(onsockClosed))
 }
 
 function onsockClosed() {
-  checkInvocations(send, { init :1, destroy: 1 }, 'when sock closed')
+  checkInvocations(send, { init :1, before: 1, after: 1 }, 'when sock closed')
 }
 
 process.on('exit', onexit)
@@ -46,5 +49,5 @@ process.on('exit', onexit)
 function onexit() {
   hooks.disable()
   hooks.sanityCheck(types)
-  checkInvocations(send, { init :1, destroy: 1 }, 'when process exits')
+  checkInvocations(send, { init :1, before: 1, after: 1, destroy: 1 }, 'when process exits')
 }
