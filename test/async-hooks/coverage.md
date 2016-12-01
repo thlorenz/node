@@ -20,7 +20,7 @@ Showing which kind of async resource is covered by which test:
 | SENDWRAP             | test-sendwrap.js                       |
 | SHUTDOWNWRAP         | test-shutdownwrap.js                   |
 | SIGNALWRAP           | test-signalwrap.js                     |
-| STATWATCHER          |                                        |
+| STATWATCHER          | test-statwatcher.js                    |
 | TCPWRAP              | test-tcpwrap.js                        |
 | TCPCONNECTWRAP       | test-tcpwrap.js                        |
 | TIMERWRAP            |                                        |
