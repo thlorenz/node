@@ -84,8 +84,9 @@ class ActivityCollector {
     }
   }
 
-  inspect({ types = null, depth = 5 } = {}) {
+  inspect({ types = null, depth = 5, stage = null } = {}) {
     const activities = types == null ? this.activities : this.activitiesOfTypes(types)
+    if (stage != null) console.log('\n%s', stage)
     console.log(util.inspect(activities, false, depth, true))
   }
 
