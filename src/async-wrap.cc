@@ -138,16 +138,21 @@ static void SetupHooks(const FunctionCallbackInfo<Value>& args) {
   Local<Value> destroy_v = fn_obj->Get(
       env->context(),
       FIXED_ONE_BYTE_STRING(env->isolate(), "destroy")).ToLocalChecked();
+  Local<Value> fatal_error_v = fn_obj->Get(
+      env->context(),
+      FIXED_ONE_BYTE_STRING(env->isolate(), "fatalError")).ToLocalChecked();
 
   CHECK(init_v->IsFunction());
   CHECK(before_v->IsFunction());
   CHECK(after_v->IsFunction());
   CHECK(destroy_v->IsFunction());
+  CHECK(fatal_error_v->IsFunction());
 
   env->set_async_hooks_init_function(init_v.As<Function>());
   env->set_async_hooks_before_function(before_v.As<Function>());
   env->set_async_hooks_after_function(after_v.As<Function>());
   env->set_async_hooks_destroy_function(destroy_v.As<Function>());
+  env->set_async_hooks_fatal_error_function(fatal_error_v.As<Function>());
 }
 
 

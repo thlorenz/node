@@ -147,7 +147,26 @@ inline void Environment::AsyncHooks::pop_from_id_stack(double id) {
   }
 
   // Make sure the stack hasn't become corrupted.
-  CHECK_EQ(id_stack_[fields_[AsyncHooks::kIdStackIndex]], id);
+  if (id_stack_[fields_[AsyncHooks::kIdStackIndex]] != id) {
+    DumpBacktrace(stderr);
+    fprintf(stderr, "\n");
+    fflush(stderr);
+    // message + 2 * max number length) + 1
+    char msg[77] = {};
+    snprintf(msg,
+             77,
+             "async hook stack has become corrupted: %'.f %'.f",
+             id_stack_[fields_[AsyncHooks::kIdStackIndex]],
+             id);
+    Environment* env = Environment::GetCurrent(isolate_);
+    v8::HandleScope handle_scope(isolate_);
+    v8::Local<v8::Function> fn = env->async_hooks_fatal_error_function();
+    v8::Local<v8::Value> argv =
+      FIXED_ONE_BYTE_STRING(isolate_, msg);
+    fn->Call(env->context(), v8::Undefined(isolate_), 1, &argv)
+      .ToLocalChecked();
+    CHECK(false && "UNREACHABLE");
+  }
 
   // Fast path where there's probably no extra stack.
   if (fields_[AsyncHooks::kIdStackSize] < AsyncHooks::kIdStackLimit) {
