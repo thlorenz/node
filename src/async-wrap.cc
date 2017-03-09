@@ -169,6 +169,54 @@ void AsyncWrap::GetAsyncId(const FunctionCallbackInfo<Value>& args) {
 }
 
 
+void AsyncWrap::PushAsyncIds(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+  // No need for CHECK(IsNumber()) on args because if FromJust() doesn't fail
+  // then the checks in push_ids() and pop_ids() will.
+  double async_id = args[0]->NumberValue(env->context()).FromJust();
+  double trigger_id = args[1]->NumberValue(env->context()).FromJust();
+  env->async_hooks()->push_ids(async_id, trigger_id);
+}
+
+
+void AsyncWrap::PopAsyncIds(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+  double async_id = args[0]->NumberValue(env->context()).FromJust();
+  args.GetReturnValue().Set(env->async_hooks()->pop_ids(async_id));
+}
+
+
+void AsyncWrap::ClearIdStack(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+  env->async_hooks()->clear_id_stack();
+}
+
+
+void AsyncWrap::AsyncReset(const FunctionCallbackInfo<Value>& args) {
+  AsyncWrap* wrap;
+  ASSIGN_OR_RETURN_UNWRAP(&wrap, args.Holder());
+  wrap->Reset();
+}
+
+
+void AsyncWrap::AddIdToDestroyList(const FunctionCallbackInfo<Value>& args) {
+  Environment* env = Environment::GetCurrent(args);
+
+  // This technically shouldn't be needed, since kDestroy should have been
+  // checked before calling this function. So make this a CHECK instead?
+  if (env->async_hooks()->fields()[AsyncHooks::kDestroy] == 0) {
+    return;
+  }
+
+  CHECK(args[0]->IsNumber());
+
+  if (env->destroy_ids_list()->empty())
+    uv_idle_start(env->destroy_ids_idle_handle(), DestroyIdsCb);
+
+  env->destroy_ids_list()->push_back(args[0]->NumberValue());
+}
+
+
 void AsyncWrap::Initialize(Local<Object> target,
                            Local<Value> unused,
                            Local<Context> context) {
@@ -177,6 +225,10 @@ void AsyncWrap::Initialize(Local<Object> target,
   HandleScope scope(isolate);
 
   env->SetMethod(target, "setupHooks", SetupHooks);
+  env->SetMethod(target, "pushAsyncIds", PushAsyncIds);
+  env->SetMethod(target, "popAsyncIds", PopAsyncIds);
+  env->SetMethod(target, "clearIdStack", ClearIdStack);
+  env->SetMethod(target, "addIdToDestroyList", AddIdToDestroyList);
 
   v8::PropertyAttribute ReadOnlyDontDelete =
       static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete);

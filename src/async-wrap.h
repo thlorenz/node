@@ -85,6 +85,12 @@ class AsyncWrap : public BaseObject {
                          v8::Local<v8::Context> context);
 
   static void GetAsyncId(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void PushAsyncIds(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void PopAsyncIds(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void ClearIdStack(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void AsyncReset(const v8::FunctionCallbackInfo<v8::Value>& args);
+  static void AddIdToDestroyList(
+      const v8::FunctionCallbackInfo<v8::Value>& args);
 
   static void DestroyIdsCb(uv_idle_t* handle);
 
