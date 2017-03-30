@@ -233,6 +233,12 @@ void AsyncWrap::Initialize(Local<Object> target,
   v8::PropertyAttribute ReadOnlyDontDelete =
       static_cast<v8::PropertyAttribute>(v8::ReadOnly | v8::DontDelete);
 
+#define FORCE_SET_TARGET_FIELD(obj, str, field)                               \
+  (obj)->ForceSet(context,                                                    \
+                  FIXED_ONE_BYTE_STRING(isolate, str),                        \
+                  field,                                                      \
+                  ReadOnlyDontDelete).FromJust()
+
   // Attach the uint32_t[] where each slot contains the count of the number of
   // callbacks waiting to be called on a particular event. It can then be
   // incremented/decremented from JS quickly to communicate to C++ if there are
@@ -241,12 +247,9 @@ void AsyncWrap::Initialize(Local<Object> target,
   int fields_count = env->async_hooks()->fields_count();
   Local<ArrayBuffer> fields_ab =
       ArrayBuffer::New(isolate, fields_ptr, fields_count * sizeof(*fields_ptr));
-  Local<Uint32Array> fields =
-      Uint32Array::New(fields_ab, 0, fields_count);
-  target->ForceSet(context,
-                   FIXED_ONE_BYTE_STRING(isolate, "async_hook_fields"),
-                   fields,
-                   ReadOnlyDontDelete).FromJust();
+  FORCE_SET_TARGET_FIELD(target,
+                         "async_hook_fields",
+                         Uint32Array::New(fields_ab, 0, fields_count));
 
   // The following v8::Float64Array has 5 fields. These fields are shared in
   // this way to allow JS and C++ to read/write each value as quickly as
@@ -263,19 +266,14 @@ void AsyncWrap::Initialize(Local<Object> target,
       isolate,
       uid_fields_ptr,
       uid_fields_count * sizeof(*uid_fields_ptr));
-  Local<Float64Array> uid_fields =
-      Float64Array::New(uid_fields_ab, 0, uid_fields_count);
-  target->ForceSet(context,
-                   FIXED_ONE_BYTE_STRING(isolate, "async_uid_fields"),
-                   uid_fields,
-                   ReadOnlyDontDelete).FromJust();
+  FORCE_SET_TARGET_FIELD(target,
+                         "async_uid_fields",
+                         Float64Array::New(uid_fields_ab, 0, uid_fields_count));
 
   Local<Object> constants = Object::New(isolate);
 #define SET_HOOKS_CONSTANT(name)                                              \
-  constants->ForceSet(context,                                                \
-                      FIXED_ONE_BYTE_STRING(isolate, #name),                  \
-                      Integer::New(isolate, AsyncHooks::name),                \
-                      ReadOnlyDontDelete).FromJust();
+  FORCE_SET_TARGET_FIELD(                                                     \
+      constants, #name, Integer::New(isolate, AsyncHooks::name));
   SET_HOOKS_CONSTANT(kInit);
   SET_HOOKS_CONSTANT(kBefore);
   SET_HOOKS_CONSTANT(kAfter);
@@ -285,24 +283,17 @@ void AsyncWrap::Initialize(Local<Object> target,
   SET_HOOKS_CONSTANT(kAsyncUidCntr);
   SET_HOOKS_CONSTANT(kInitTriggerId);
 #undef SET_HOOKS_CONSTANT
-  target->ForceSet(context,
-                   FIXED_ONE_BYTE_STRING(isolate, "constants"),
-                   constants,
-                   ReadOnlyDontDelete).FromJust();
+  FORCE_SET_TARGET_FIELD(target, "constants", constants);
 
   Local<Object> async_providers = Object::New(isolate);
-#define V(PROVIDER)                                                           \
-  async_providers->ForceSet(                                                  \
-      context,                                                                \
-      FIXED_ONE_BYTE_STRING(isolate, #PROVIDER),                              \
-      Integer::New(isolate, AsyncWrap::PROVIDER_ ## PROVIDER),                \
-      ReadOnlyDontDelete).FromJust();
+#define V(p)                                                                  \
+  FORCE_SET_TARGET_FIELD(                                                     \
+      async_providers, #p, Integer::New(isolate, AsyncWrap::PROVIDER_ ## p));
   NODE_ASYNC_PROVIDER_TYPES(V)
 #undef V
-  target->ForceSet(context,
-                   FIXED_ONE_BYTE_STRING(isolate, "Providers"),
-                   async_providers,
-                   ReadOnlyDontDelete).FromJust();
+  FORCE_SET_TARGET_FIELD(target, "Providers", async_providers);
+
+#undef FORCE_SET_TARGET_FIELD
 
   env->set_async_hooks_init_function(Local<Function>());
   env->set_async_hooks_before_function(Local<Function>());
