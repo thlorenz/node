@@ -154,6 +154,7 @@ static void SetupHooks(const FunctionCallbackInfo<Value>& args) {
       FIXED_ONE_BYTE_STRING(env->isolate(), #name)).ToLocalChecked();         \
   CHECK(name##_v->IsFunction());                                              \
   env->set_async_hooks_##name##_function(name##_v.As<Function>());
+
   GET_HOOK_FN(init);
   GET_HOOK_FN(before);
   GET_HOOK_FN(after);
@@ -275,6 +276,7 @@ void AsyncWrap::Initialize(Local<Object> target,
 #define SET_HOOKS_CONSTANT(name)                                              \
   FORCE_SET_TARGET_FIELD(                                                     \
       constants, #name, Integer::New(isolate, AsyncHooks::name));
+
   SET_HOOKS_CONSTANT(kInit);
   SET_HOOKS_CONSTANT(kBefore);
   SET_HOOKS_CONSTANT(kAfter);
