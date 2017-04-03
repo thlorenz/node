@@ -86,7 +86,8 @@ inline Environment::AsyncHooks::AsyncHooks(v8::Isolate* isolate)
       uid_fields_() {
   v8::HandleScope handle_scope(isolate_);
 
-  // kAsyncUidCntr should start at 1 because that'll be the id for bootstrap.
+  // kAsyncUidCntr should start at 1 because that'll be the id the execution
+  // context during bootstrap (code that runs before entering uv_run()).
   uid_fields_[AsyncHooks::kAsyncUidCntr] = 1;
 
   // Create all the provider strings that will be passed to JS. Place them in
