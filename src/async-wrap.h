@@ -92,8 +92,6 @@ class AsyncWrap : public BaseObject {
   static void AddIdToDestroyList(
       const v8::FunctionCallbackInfo<v8::Value>& args);
 
-  static void DestroyIdsCb(uv_idle_t* handle);
-
   inline ProviderType provider_type() const;
 
   inline double get_id() const;
