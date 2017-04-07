@@ -21,7 +21,7 @@ function onresolved() {
   checkInvocations(a, { init: 1, before: 1 }, 'while in onresolved callback');
 }
 
-tick(2);
+tick(1E4);
 process.on('exit', onexit);
 
 function onexit() {

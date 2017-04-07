@@ -112,7 +112,7 @@ function onserverClosed() {
   //
   // Server closed
   //
-  tick(1, common.mustCall(() => {
+  tick(1E4, common.mustCall(() => {
     checkInvocations(svr, { init: 1, before: 2, after: 2, destroy: 1 },
                      'server: when server closed');
     checkInvocations(client, { init: 1, before: 3, after: 3, destroy: 1 },

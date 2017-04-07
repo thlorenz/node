@@ -74,7 +74,7 @@ function onsecondHandShake() {
                    'first connection, when second handshake');
   checkInvocations(f2, { init: 1, before: 1 },
                    'second connection, when second handshake');
-  tick(1000);
+  tick(1E4);
 }
 
 process.on('exit', onexit);
