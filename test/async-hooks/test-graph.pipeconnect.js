@@ -30,7 +30,7 @@ function onexit() {
     hooks,
     [ { type: 'PIPEWRAP', id: 'pipe:1', triggerId: null },
       { type: 'PIPEWRAP', id: 'pipe:2', triggerId: 'pipe:1' },
-      { type: 'PIPECONNECTWRAP', id: 'pipeconnect:1', triggerId: 'pipe:1' },
+      { type: 'PIPECONNECTWRAP', id: 'pipeconnect:1', triggerId: 'pipe:2' },
       { type: 'PIPEWRAP', id: 'pipe:3', triggerId: 'pipe:1' },
       { type: 'SHUTDOWNWRAP', id: 'shutdown:1', triggerId: 'pipe:3' } ]
   );

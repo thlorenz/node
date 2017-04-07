@@ -35,9 +35,9 @@ function onexit() {
     [ { type: 'TCPWRAP', id: 'tcp:1', triggerId: null },
       { type: 'TCPWRAP', id: 'tcp:2', triggerId: 'tcp:1' },
       { type: 'GETADDRINFOREQWRAP',
-        id: 'getaddrinforeq:1', triggerId: 'tcp:1' },
+        id: 'getaddrinforeq:1', triggerId: 'tcp:2' },
       { type: 'TCPCONNECTWRAP',
-        id: 'tcpconnect:1', triggerId: 'getaddrinforeq:1' },
+        id: 'tcpconnect:1', triggerId: 'tcp:2' },
       { type: 'TCPWRAP', id: 'tcp:3', triggerId: 'tcp:1' },
       { type: 'SHUTDOWNWRAP', id: 'shutdown:1', triggerId: 'tcp:3' } ]
   );
