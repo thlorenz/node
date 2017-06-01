@@ -278,7 +278,7 @@ Now if we only use `scope` to graph resource allocation we get the following:
 TTYWRAP(6) -> Timeout(4) -> TIMERWRAP(5) -> TickObject(3) -> root(1)
 ```
 
-The `TCPWRAP` isn't part of this graph; evne though it was the reason for
+The `TCPWRAP` isn't part of this graph; even though it was the reason for
 `console.log()` being called. This is because binding to a port without a
 hostname is actually synchronous, but to maintain a completely asynchronous API
 the user's callback is placed in a `process.nextTick()`.
